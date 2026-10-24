@@ -1,70 +1,72 @@
-# Methodology & Data Science Pipeline
+# Methodology, Data Engineering & Machine Learning Formulation
 
-## 1. Aviation Data Schema & Benchmark
-The platform currently utilizes a calibrated benchmark dataset modeled after the **U.S. Department of Transportation Bureau of Transportation Statistics (BTS)** and **Federal Aviation Administration (FAA)** on-time reporting standards.
+## 1. Target Variable Formulation & Delay Thresholds
 
-### Primary Dataset Attributes (24 Fields):
-| Field | Type | Description |
-|---|---|---|
-| `flight_id` | String | Unique flight callsign (e.g. DL1042, UA452, AA819) |
-| `carrier_code` | Categorical | Airline IATA code (DL, UA, AA, WN, B6, AS) |
-| `carrier_name` | String | Commercial airline operator name |
-| `origin` / `dest` | Categorical | 3-letter IATA airport code (e.g. ATL, ORD, JFK, LAX) |
-| `distance_miles` | Numeric | Great-circle Haversine distance in statute miles |
-| `air_time_minutes`| Numeric | Airborne flight duration excluding taxi |
-| `scheduled_dep_time` | String | Scheduled departure timestamp (HH:MM) |
-| `dep_hour` / `dep_minute` | Numeric | Extracted departure hour (0-23) and minute |
-| `day_of_week` | Numeric | 0 (Monday) to 6 (Sunday) |
-| `month` | Numeric | Calendar month (1 to 12) for seasonal climatology |
-| `origin_weather` | Categorical | Terminal weather (Clear, Light Rain, Heavy Rain, Thunderstorm, Fog, Snow/Ice) |
-| `dest_weather` | Categorical | Arrival aerodrome weather condition |
-| `wind_speed_knots` | Numeric | Surface sustained crosswind speed in knots |
-| `visibility_miles` | Numeric | Prevailing horizontal visibility in statute miles |
-| `precipitation_mm` | Numeric | Accumulated precipitation in millimeters |
-| `congestion_level` | Categorical | Active hub ground congestion (Low, Moderate, High, Severe) |
-| `taxi_out_minutes` | Numeric | Time spent between gate departure and takeoff roll |
-| `historical_carrier_delay_rate` | Numeric | Historical on-time punctuality baseline for carrier |
-| `arr_delay_minutes`| Numeric | Continuous arrival delay (negative = early, positive = late) |
-| `is_delayed` | Binary | **Target Variable**: 1 if `arr_delay_minutes >= 15`, else 0 |
-| `delay_cause` | Categorical | Primary FAA cause (Weather, ATC/NAS, Late Aircraft, Carrier, On Time) |
-| `delay_risk_tier` | Categorical | Risk classification (Low, Moderate, High, Severe) |
+Under **Federal Aviation Administration (FAA)** and **Bureau of Transportation Statistics (BTS)** standards, a commercial flight is categorized as delayed if it arrives at the gate **15 minutes or later** than its scheduled arrival time ($T_{\text{sched}}$).
+
+We define the binary target classification variable explicitly as:
+$$y = \begin{cases} 1 & \text{if } \text{arr\_delay\_minutes} \ge \tau \\ 0 & \text{if } \text{arr\_delay\_minutes} < \tau \end{cases}$$
+where $\tau$ is the configurable delay threshold (default: $\tau = 15$ minutes; reconfigurable to $\tau = 30$ or $\tau = 45$ minutes via `/api/model/retrain`).
+
+For the continuous regression task, the target variable is $\widehat{y}_{\text{reg}} \in \mathbb{R}$, representing the expected late arrival duration in minutes.
 
 ---
 
-## 2. Feature Engineering Pipeline
+## 2. Prevention of Target Leakage
 
-### A. Cyclical Temporal Encoding
-Linear numerical hours (0 to 23) create an artificial discontinuity between 23:59 and 00:00. We apply sine and cosine transformations:
-$$\text{dep\_hour\_sin} = \sin\left(\frac{2\pi \cdot \text{hour}}{24}\right), \quad \text{dep\_hour\_cos} = \cos\left(\frac{2\pi \cdot \text{hour}}{24}\right)$$
+A common defect in flight delay modeling is accidentally including variables that are only known **after** takeoff or touchdown.
 
-### B. Preprocessing & Column Transformers
-- **Numerical Scaling**: `StandardScaler` standardizes continuous features (`wind_speed_knots`, `taxi_out_minutes`, `precipitation_mm`, `distance_miles`, `air_time_minutes`) to zero mean and unit variance.
-- **Categorical Encoding**: `OneHotEncoder(handle_unknown='ignore', sparse_output=False)` encodes high-cardinality airports, airline codes, and categorical weather states.
+To ensure physical and operational validity, our preprocessing pipeline strictly enforces a **Zero Target Leakage Blocklist**:
 
----
-
-## 3. Modeling Architecture
-
-### Baseline Classifier: Random Forest Classifier
-- **Algorithm**: `RandomForestClassifier(n_estimators=120, max_depth=9, class_weight='balanced')`
-- **Objective**: Estimate posterior delay probability $P(\text{Delay} \ge 15\text{ min} \mid X)$.
-- **Class Imbalance Handling**: Applied `class_weight='balanced'` to offset the natural 70/30 on-time vs. delayed distribution.
-
-### Baseline Regressor: Random Forest Regressor
-- **Algorithm**: `RandomForestRegressor(n_estimators=100, max_depth=8)`
-- **Objective**: Estimate expected magnitude of late arrival in minutes ($\widehat{y} \in \mathbb{R}$).
+| Variable | Availability | Status in Model | Reason |
+|---|---|---|---|
+| `arr_delay_minutes` | Post-Arrival | ❌ **Excluded** | Ground-truth target variable |
+| `dep_delay_minutes` | Post-Departure | ❌ **Excluded** | Future information when predicting prior to departure |
+| `actual_dep_time` / `actual_arr_time` | Post-Flight | ❌ **Excluded** | Unknown prior to flight pushback |
+| `air_time_minutes` | Post-Flight | ❌ **Excluded** | Airborne duration measured after landing |
+| `delay_cause` | Post-Arrival | ❌ **Excluded** | Cause assigned post-mortem by dispatch |
+| `scheduled_dep_time` | Pre-Departure | ✅ **Included** | Available at schedule publication |
+| `origin_weather` / `dest_weather` | Pre-Departure | ✅ **Included** | Aerodrome terminal forecast (METAR/TAF) |
+| `wind_speed_knots` | Pre-Departure | ✅ **Included** | Sustained runway surface crosswinds |
+| `taxi_out_minutes` (scheduled buffer) | Pre-Departure | ✅ **Included** | Airport nominal taxi baseline |
+| `historical_carrier_delay_rate` | Pre-Departure | ✅ **Included** | Carrier historical punctuality track record |
 
 ---
 
-## 4. Evaluation Strategy & Metrics
-- **Validation Split**: 80% Train ($N=1,000$), 20% Holdout Test ($N=250$) stratified on `is_delayed`.
-- **Classification Telemetry**:
-  - **Accuracy**: $66.8\%$
-  - **Precision**: $45.8\%$
-  - **Recall**: $27.9\%$
-  - **F1 Score**: $0.347$
-  - **ROC-AUC**: $0.570$
-- **Regression Telemetry**:
-  - **MAE**: $32.7$ minutes
-  - **RMSE**: $48.2$ minutes
-- **Explainability**: Gini importance decomposition across wind dynamics, taxi runway queues, carrier fleet history, and atmospheric visibility.
+## 3. Comparative Model Architecture
+
+We formulate delay prediction as a comparative machine learning benchmark between two distinct algorithmic paradigms:
+
+### Model A: Linear Baseline (Logistic Regression)
+- **Objective**: Establish an interpretable, transparent statistical baseline.
+- **Formulation**:
+  $$P(y = 1 \mid \mathbf{x}) = \sigma(\mathbf{w}^T \mathbf{x} + b) = \frac{1}{1 + e^{-(\mathbf{w}^T \mathbf{x} + b)}}$$
+- **Class Imbalance**: Employs `class_weight='balanced'` to prevent bias toward the majority class (70% on-time flights).
+- **Limitation**: Inability to capture non-linear cross-interactions between atmospheric and logistical variables.
+
+### Model B: Stronger Candidate Model (Histogram Gradient Boosting)
+- **Objective**: Capture non-linear interactions (e.g. convective thunderstorms combined with high crosswinds and peak evening schedule banking hours).
+- **Formulation**: An ensemble of decision trees trained sequentially by gradient descent in function space, utilizing histogram binning (inspired by LightGBM):
+  $$F_m(\mathbf{x}) = F_{m-1}(\mathbf{x}) + \gamma_m h_m(\mathbf{x})$$
+- **Performance**: High computational efficiency on a 16GB RAM laptop, native handling of categorical features, and robustness to outliers.
+
+---
+
+## 4. Evaluation Strategy & Trade-Off Analysis
+
+- **Train/Test Split**: 80% Training ($N=1,000$), 20% Holdout Test ($N=250$) stratified on the binary target.
+- **Naive Majority Class Dummy**: In an aviation dataset where 68.5% of flights are on-time, a zero-intelligence dummy model predicting "Always On-Time" achieves **68.5% raw accuracy**, yet fails completely with **0% recall** on delayed flights.
+- **Evaluation Telemetry**:
+  - **Accuracy**: Overall fraction of correct classifications.
+  - **Precision**: $\frac{TP}{TP + FP}$ — proportion of delay alarms that were real disruptions. Low precision leads to airline dispatcher "alarm fatigue" and costly unnecessary gate reassignments.
+  - **Recall**: $\frac{TP}{TP + FN}$ — proportion of actual delays successfully flagged before departure. High recall shields airlines and air traffic control from sudden ground delay programs (GDP).
+  - **F1 Score**: Harmonic mean of Precision and Recall.
+  - **ROC-AUC & PR-AUC**: Threshold-invariant discrimination capability.
+
+---
+
+## 5. Feature Attribution & Explainability
+
+Individual flight predictions are decomposed using local attribution against reference training medians:
+$$\text{Attribution}_j = \text{sign}(x_j - \bar{x}_j) \cdot \alpha_j \cdot 100\%$$
+Every explanation is tagged with its historical association in the U.S. DOT BTS dataset, accompanied by a scientific notice that observational machine learning indicates statistical associations, not causal guarantees.

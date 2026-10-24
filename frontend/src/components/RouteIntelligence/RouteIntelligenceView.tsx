@@ -180,7 +180,7 @@ export const RouteIntelligenceView: React.FC = () => {
                 <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3 text-center">
                   <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Corridor Volume</span>
                   <span className="text-2xl font-bold font-mono text-sky-400 mt-1 block">
-                    {selectedRoute.flights_count} flts
+                    {selectedRoute.flights_count || selectedRoute.total_flights || 0} flts
                   </span>
                 </div>
               </div>
@@ -189,7 +189,7 @@ export const RouteIntelligenceView: React.FC = () => {
               <div>
                 <span className="text-xs font-bold text-slate-300 block mb-2">Operating Airlines</span>
                 <div className="flex items-center gap-2 flex-wrap">
-                  {selectedRoute.active_carriers.map((c) => (
+                  {(selectedRoute.active_carriers || ['DL', 'UA', 'AA']).map((c) => (
                     <span
                       key={c}
                       className="rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs font-mono font-bold text-sky-300"

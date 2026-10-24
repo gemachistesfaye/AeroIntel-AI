@@ -8,6 +8,7 @@ from app.api.routes_predict import bp as predict_bp
 from app.api.routes_route_intel import bp as route_intel_bp
 from app.api.routes_model_eval import bp as model_eval_bp
 from app.api.routes_data_mgmt import bp as data_mgmt_bp
+from app.api.routes_analytics import bp as analytics_bp
 
 def create_app() -> Flask:
     app = Flask(__name__)
@@ -20,6 +21,7 @@ def create_app() -> Flask:
     app.register_blueprint(route_intel_bp, url_prefix=f"{settings.API_PREFIX}/route-intelligence")
     app.register_blueprint(model_eval_bp, url_prefix=f"{settings.API_PREFIX}/model")
     app.register_blueprint(data_mgmt_bp, url_prefix=f"{settings.API_PREFIX}/data")
+    app.register_blueprint(analytics_bp, url_prefix=f"{settings.API_PREFIX}/analytics")
 
     @app.route(f"{settings.API_PREFIX}/health", methods=["GET"])
     def health_check():

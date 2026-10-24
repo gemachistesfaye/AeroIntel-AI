@@ -6,7 +6,9 @@ import {
   PredictionResponse,
   RouteIntelligenceData,
   ModelEvaluationData,
-  DataManagementInfo
+  ModelComparisonData,
+  DataManagementInfo,
+  DataQualityReport
 } from '../types/aviation';
 
 const API_BASE = '/api';
@@ -74,23 +76,68 @@ export const aviationApi = {
     return fetchJson(`${API_BASE}/route-intelligence?${query.toString()}`);
   },
 
-  // Model Evaluation
+  // Model Evaluation & Comparison
   async getModelEvaluation(): Promise<ModelEvaluationData> {
     return fetchJson(`${API_BASE}/model/evaluation`);
   },
 
-  // Retrain baseline model
-  async retrainModel(): Promise<{ message: string; data: ModelEvaluationData }> {
-    return fetchJson(`${API_BASE}/model/retrain`, { method: 'POST' });
+  async getModelComparison(): Promise<ModelComparisonData> {
+    return fetchJson(`${API_BASE}/model/compare`);
   },
 
-  // Data Management
+  async retrainModel(delayThresholdMinutes = 15): Promise<{ message: string; data: ModelComparisonData }> {
+    return fetchJson(`${API_BASE}/model/retrain`, {
+      method: 'POST',
+      body: JSON.stringify({ delay_threshold_minutes: delayThresholdMinutes }),
+    });
+  },
+
+  // Data Management & Ingestion
   async getDataStatus(): Promise<DataManagementInfo> {
     return fetchJson(`${API_BASE}/data/status`);
   },
 
-  // Regenerate demo dataset
-  async regenerateData(): Promise<{ records: number; message: string }> {
+  async getDataQualityReport(): Promise<DataQualityReport> {
+    return fetchJson(`${API_BASE}/data/quality`);
+  },
+
+  async uploadCsv(file: File): Promise<{ success: boolean; message: string; file_name: string; quality_report: DataQualityReport }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch(`${API_BASE}/data/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const errorBody = await res.json().catch(() => ({}));
+      throw new Error(errorBody.error || `Upload failed with status ${res.status}`);
+    }
+    return res.json();
+  },
+
+  async ingestDataset(fileName?: string): Promise<{ success: boolean; records: number; quality_report: DataQualityReport; message: string }> {
+    return fetchJson(`${API_BASE}/data/ingest`, {
+      method: 'POST',
+      body: JSON.stringify({ file_name: fileName }),
+    });
+  },
+
+  async regenerateData(): Promise<{ records: number; message: string; quality_report: DataQualityReport }> {
     return fetchJson(`${API_BASE}/data/regenerate`, { method: 'POST' });
+  },
+
+  // Big Data Analytics
+  async getAnalyticsSummary(): Promise<any> {
+    return fetchJson(`${API_BASE}/analytics/summary`);
+  },
+
+  async getCarrierBenchmarks(): Promise<any[]> {
+    return fetchJson(`${API_BASE}/analytics/carriers`);
+  },
+
+  async getCorridorAnalytics(): Promise<any[]> {
+    return fetchJson(`${API_BASE}/analytics/corridors`);
   },
 };

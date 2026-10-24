@@ -8,9 +8,13 @@ def predict_flight():
     try:
         payload = request.get_json(force=True, silent=True) or {}
         if not payload:
-            return jsonify({"success": False, "error": "Request body must contain valid JSON flight parameters."}), 400
+            return jsonify({
+                "success": False,
+                "error": "Request body must contain valid JSON flight parameters."
+            }), 400
 
-        result = model_service.predict_flight_delay(payload)
+        model_type = payload.get("model_type", "candidate")
+        result = model_service.predict_flight_delay(payload, model_type=model_type)
         return jsonify({"success": True, "data": result})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -19,6 +23,7 @@ def predict_flight():
 def predict_health():
     return jsonify({
         "ready": model_service.is_ready,
-        "engine": "Scikit-Learn RandomForest Pipeline",
-        "type": "Operational Baseline"
+        "candidate_model": "HistGradientBoosting (Candidate)",
+        "baseline_model": "LogisticRegression (Linear Baseline)",
+        "type": "Operational Comparative Pipelines"
     })

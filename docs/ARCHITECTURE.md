@@ -5,11 +5,11 @@ flowchart TD
     subgraph Frontend["Frontend Client (React 18 + TypeScript + Vite)"]
         UI_Dash["Mission Dashboard"]
         UI_Analysis["Flight Analysis & Log"]
-        UI_Predict["Predict Delay Simulator"]
-        UI_Route["Route Intelligence"]
-        UI_Model["Model Evaluation & ROC"]
-        UI_Data["Data Management & Schema"]
-        API_Client["Aviation API Service (Axios / Fetch)"]
+        UI_Predict["Predict Delay Simulator (Model Selector)"]
+        UI_Route["Route Intelligence & Corridors"]
+        UI_Model["Model Comparison & Evaluation (Baseline vs Candidate)"]
+        UI_Data["Data Management (CSV Upload & Quality Audits)"]
+        API_Client["Typed Aviation API Client"]
         
         UI_Dash --> API_Client
         UI_Analysis --> API_Client
@@ -27,6 +27,7 @@ flowchart TD
         RouteBP["/api/route-intelligence"]
         ModelBP["/api/model"]
         DataBP["/api/data"]
+        AnalyticsBP["/api/analytics"]
 
         Router --> DashBP
         Router --> FlightBP
@@ -34,122 +35,119 @@ flowchart TD
         Router --> RouteBP
         Router --> ModelBP
         Router --> DataBP
+        Router --> AnalyticsBP
     end
 
-    subgraph CoreServices["Backend Service Layer"]
-        ModelService["AviationModelService (Real-Time Inference)"]
-        DataManager["AviationDataManager (In-Memory Pandas Query Engine)"]
+    subgraph CoreServices["Processing & ML Service Layer"]
+        IngestionPipeline["FlightDataIngestionPipeline (Validation & Quality)"]
+        BigDataProcessor["FlightAnalyticsProcessor (Optimized Pandas & Chunking)"]
+        SparkArchitecture["PySparkAviationArchitecture (Distributed Cluster Engine)"]
+        ModelService["AviationModelService (Dual Pipeline Inference)"]
+        Explainer["FlightDelayExplainer (Feature Attribution Engine)"]
     end
 
     subgraph DataML["Data & Machine Learning Pipeline"]
         Dataset[("sample_flights.csv (FAA/BTS Benchmark)")]
-        Pipeline["Feature Engineering & ColumnTransformer"]
-        ClfModel["RandomForestClassifier (.joblib)"]
-        RegModel["RandomForestRegressor (.joblib)"]
-        EvalMeta["evaluation_metrics.json"]
+        Uploads[("Uploaded CSV Files / Raw Transcripts")]
+        QualityReport["data_quality_report.json"]
+        Preprocessor["Pre-Departure ColumnTransformer (Zero Leakage)"]
+        BaselineClf["Baseline LogisticRegression (.joblib)"]
+        CandidateClf["Candidate HistGradientBoosting (.joblib)"]
+        DurationReg["RandomForestRegressor (.joblib)"]
+        ComparisonReport["evaluation_comparison.json"]
     end
 
     API_Client <-->|HTTP / JSON via Port 8000| Router
+    
+    DataBP --> IngestionPipeline
+    IngestionPipeline --> Dataset
+    IngestionPipeline --> QualityReport
+    DataBP --> BigDataProcessor
+
+    AnalyticsBP --> BigDataProcessor
+    AnalyticsBP --> SparkArchitecture
+    
     PredictBP --> ModelService
-    DashBP --> DataManager
-    FlightBP --> DataManager
-    RouteBP --> DataManager
+    ModelService --> Explainer
+    ModelService --> BaselineClf
+    ModelService --> CandidateClf
+    ModelService --> DurationReg
+
     ModelBP --> ModelService
-    DataBP --> DataManager
+    ModelBP --> ComparisonReport
 
-    DataManager <--> Dataset
-    ModelService <--> ClfModel
-    ModelService <--> RegModel
-    ModelService <--> EvalMeta
-    Pipeline --> ClfModel
-    Pipeline --> RegModel
+    Preprocessor --> BaselineClf
+    Preprocessor --> CandidateClf
+    Preprocessor --> DurationReg
 ```
 
-## API Specifications
+---
 
-### 1. `GET /api/health`
-Returns service status, model availability, and active dataset row counts.
-- **Response**:
-```json
-{
-  "status": "healthy",
-  "service": "AI-Powered Aviation Intelligence Platform",
-  "version": "1.0.0-alpha",
-  "model_ready": true,
-  "records_loaded": 1250,
-  "environment": "development"
-}
-```
+## 1. Data Ingestion & Quality Architecture
+The ingestion pipeline (`backend/app/data/ingestion.py`) handles historical flight CSV datasets:
+- **Normalization**: Automatically maps official U.S. DOT BTS TranStats headers (`FL_DATE`, `OP_UNIQUE_CARRIER`, `ORIGIN`, `DEST`, `CRS_DEP_TIME`, `ARR_DELAY`) to internal schema.
+- **Validation**:
+  - Rejects flights with matching origin and destination aerodromes.
+  - Rejects negative distances or malformed departure times.
+  - Rejects duplicate records by unique flight/date/schedule hash.
+  - Derives target variable $y \in \{0, 1\}$ using configurable lateness threshold ($\text{arr\_delay} \ge 15$ min).
+- **Quality Reporting**: Emits JSON summaries tracking total input rows, valid rows, rejected rows, and acceptance rate.
 
-### 2. `GET /api/dashboard/summary`
-Returns high-level fleet statistics, delay causes breakdown, carrier punctuality ranking, hourly delay curves, and recent critical disruptions.
+---
 
-### 3. `GET /api/flights`
-Query parameters:
-- `q`: Search term (flight ID, carrier name, origin, dest)
-- `carrier`: Filter by airline code (DL, UA, AA, WN, B6, AS)
-- `risk_tier`: Filter by Low, Moderate, High, Severe
-- `status`: ontime or delayed
-- `page`: Page index (1-based)
-- `limit`: Records per page (default: 15)
+## 2. Big Data Processing Strategy
+- **Local Memory Optimization (16GB RAM Laptop)**:
+  - Categorical casting reduces memory overhead by ~75%.
+  - Downcasts continuous features to `float32` and timestamps/counts to `int16`/`int32`.
+  - Supports chunked streaming (`chunksize=50000`) for large CSV archives.
+- **PySpark Scalability Architecture (`spark_processor.py`)**:
+  - PySpark DataFrame processing pipeline configured for distributed cluster deployments (Google Cloud Dataproc / AWS EMR).
+  - Implements distributed `groupBy`, rolling carrier window partitions, and Parquet caching.
+  - Falls back gracefully to the optimized Pandas engine on local desktop machines without Java dependencies.
 
-### 4. `POST /api/predict/flight`
-Executes real-time inference using the Scikit-Learn baseline pipeline.
-- **Request Body**:
-```json
-{
-  "carrier_code": "DL",
-  "origin": "ATL",
-  "dest": "LAX",
-  "dep_hour": 17,
-  "dep_minute": 30,
-  "day_of_week": 4,
-  "month": 7,
-  "origin_weather": "Thunderstorm",
-  "dest_weather": "Clear",
-  "wind_speed_knots": 28.0,
-  "visibility_miles": 4.5,
-  "precipitation_mm": 12.0,
-  "congestion_level": "High",
-  "taxi_out_minutes": 32.0
-}
-```
-- **Response**:
-```json
-{
-  "success": true,
-  "data": {
-    "prediction": {
-      "delay_probability": 0.742,
-      "delay_probability_pct": 74.2,
-      "is_delayed_predicted": true,
-      "expected_delay_minutes": 38.5,
-      "risk_tier": "Severe Risk",
-      "risk_color": "#ef4444",
-      "confidence_score": 0.76,
-      "model_version": "1.0.0-baseline"
-    },
-    "contributing_factors": [
-      {
-        "factor": "Adverse Origin Weather (Thunderstorm)",
-        "impact": "High Negative Impact",
-        "score": 32,
-        "description": "Terminal airspace experiencing thunderstorm, inducing ground delay programs (GDP)."
-      }
-    ],
-    "operational_recommendations": [
-      "Alert flight dispatch and gate operations for possible ground delay program (GDP) impact.",
-      "Pre-calculate fuel diversion reserves if destination weather holds below minimums."
-    ]
-  }
-}
-```
+---
 
-### 5. `GET /api/route-intelligence`
-Aggregates performance metrics across origin-destination corridors and airport hubs.
+## 3. Machine Learning Architecture & Target Leakage Prevention
 
-### 6. `GET /api/model/evaluation`
-Provides honest Scikit-Learn performance metrics, confusion matrix counts, ROC/PR curve points, and feature importance rankings.
+### Pre-Departure Features Only:
+All training features strictly represent variables known **prior to flight departure**:
+- `dep_hour`, `dep_hour_sin`, `dep_hour_cos`, `dep_minute`
+- `day_of_week`, `month`
+- `distance_miles`
+- `taxi_out_minutes` (airport scheduled runway taxi buffer)
+- `origin_weather`, `dest_weather` (terminal aerodrome forecasts)
+- `wind_speed_knots`, `visibility_miles`, `precipitation_mm`
+- `congestion_level`, `historical_carrier_delay_rate`
+- `carrier_code`, `origin`, `dest`
 
-### 7. `POST /api/data/regenerate`
-Regenerates the benchmark CSV dataset and reloads the memory cache.
+### Strict Target Leakage Blocklist:
+The pipeline drops all post-departure variables:
+`arr_delay_minutes`, `dep_delay_minutes`, `actual_dep_time`, `actual_arr_time`, `air_time_minutes`, and `delay_cause`.
+
+### Comparative Models:
+1. **Model A: Baseline Linear Classifier**:
+   - `LogisticRegression(class_weight="balanced", max_iter=1000)`
+2. **Model B: Stronger Candidate Non-Linear Classifier**:
+   - `HistGradientBoostingClassifier(max_iter=140, max_depth=8, class_weight="balanced")`
+3. **Model C: Continuous Delay Duration Regressor**:
+   - `RandomForestRegressor(n_estimators=100, max_depth=8)`
+
+---
+
+## 4. API Endpoints Reference
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/health` | `GET` | Service & model availability check |
+| `/api/predict/flight` | `POST` | Submits pre-departure flight parameters for real-time inference; supports `model_type="candidate"` or `"baseline"`. Returns probability, duration, confidence, risk tier, feature attribution, and causality disclaimer. |
+| `/api/model/evaluation` | `GET` | Retrieves active model evaluation scorecard |
+| `/api/model/compare` | `GET` | Returns side-by-side comparative metrics for Baseline vs Candidate models, confusion matrices, and ROC/PR points |
+| `/api/model/retrain` | `POST` | Retrains both models on demand with configurable `delay_threshold_minutes` (e.g. 15, 30 min) |
+| `/api/data/status` | `GET` | Dataset overview, column schema, and data health |
+| `/api/data/quality` | `GET` | Latest data quality report generated by ingestion pipeline |
+| `/api/data/upload` | `POST` | Uploads multipart CSV file and runs schema validation audit |
+| `/api/data/ingest` | `POST` | Ingests and activates uploaded or local dataset |
+| `/api/data/regenerate` | `POST` | Re-synthesizes and cleans benchmark flight records |
+| `/api/analytics/summary`| `GET` | Fleet aggregates across carriers, corridors, and hubs |
+| `/api/analytics/filter` | `GET` | Dynamic queries by airline, airport, status, and departure hour |
+| `/api/analytics/spark-status` | `GET` | PySpark cluster status vs local Pandas engine |

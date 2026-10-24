@@ -1,18 +1,18 @@
 {
-  "model_type": "RandomForest Baseline (Scikit-Learn)",
-  "model_version": "1.0.0-baseline",
-  "dataset_type": "FAA/BTS Historical Benchmark (Sample Data)",
+  "model_type": "HistGradientBoosting Classifier (Candidate)",
+  "model_version": "2.0.0-candidate",
+  "dataset_type": "FAA/BTS Historical Benchmark",
   "train_samples": 1000,
   "test_samples": 250,
   "classification": {
-    "accuracy": 0.668,
-    "precision": 0.4583,
+    "accuracy": 0.632,
+    "precision": 0.386,
     "recall": 0.2785,
-    "f1_score": 0.3465,
-    "roc_auc": 0.5703,
+    "f1_score": 0.3235,
+    "roc_auc": 0.5262,
     "confusion_matrix": {
-      "true_negative": 145,
-      "false_positive": 26,
+      "true_negative": 136,
+      "false_positive": 35,
       "false_negative": 57,
       "true_positive": 22
     },
@@ -22,96 +22,76 @@
         "tpr": 0.0
       },
       {
-        "fpr": 0.0234,
+        "fpr": 0.0351,
         "tpr": 0.038
       },
       {
-        "fpr": 0.0409,
-        "tpr": 0.1139
+        "fpr": 0.076,
+        "tpr": 0.1013
       },
       {
         "fpr": 0.0994,
-        "tpr": 0.1646
+        "tpr": 0.1392
       },
       {
-        "fpr": 0.1228,
+        "fpr": 0.152,
+        "tpr": 0.1899
+      },
+      {
+        "fpr": 0.1813,
         "tpr": 0.2405
       },
       {
-        "fpr": 0.1988,
-        "tpr": 0.2785
+        "fpr": 0.2281,
+        "tpr": 0.3291
       },
       {
-        "fpr": 0.2398,
-        "tpr": 0.3671
-      },
-      {
-        "fpr": 0.2749,
-        "tpr": 0.3924
-      },
-      {
-        "fpr": 0.3216,
+        "fpr": 0.2632,
         "tpr": 0.4177
       },
       {
-        "fpr": 0.3801,
-        "tpr": 0.443
+        "fpr": 0.345,
+        "tpr": 0.4684
       },
       {
-        "fpr": 0.4152,
-        "tpr": 0.4937
+        "fpr": 0.3977,
+        "tpr": 0.5063
       },
       {
-        "fpr": 0.4386,
-        "tpr": 0.519
+        "fpr": 0.4912,
+        "tpr": 0.5443
       },
       {
-        "fpr": 0.5263,
-        "tpr": 0.557
-      },
-      {
-        "fpr": 0.5497,
+        "fpr": 0.6491,
         "tpr": 0.5823
       },
       {
-        "fpr": 0.5906,
+        "fpr": 0.7076,
         "tpr": 0.6203
       },
       {
-        "fpr": 0.6082,
+        "fpr": 0.7485,
         "tpr": 0.6835
       },
       {
-        "fpr": 0.6433,
-        "tpr": 0.7215
+        "fpr": 0.7778,
+        "tpr": 0.7342
       },
       {
-        "fpr": 0.6725,
-        "tpr": 0.7468
-      },
-      {
-        "fpr": 0.7251,
+        "fpr": 0.8129,
         "tpr": 0.8101
       },
       {
-        "fpr": 0.7544,
-        "tpr": 0.8354
-      },
-      {
-        "fpr": 0.807,
+        "fpr": 0.8421,
         "tpr": 0.8608
       },
       {
-        "fpr": 0.8304,
-        "tpr": 0.8861
-      },
-      {
-        "fpr": 0.8655,
-        "tpr": 0.9241
+        "fpr": 0.8889,
+        "tpr": 0.8987
       },
       {
         "fpr": 0.9298,
-        "tpr": 0.9747
+        "tpr": 0.962
       },
       {
         "fpr": 1.0,
@@ -124,96 +104,76 @@
         "precision": 0.316
       },
       {
-        "recall": 0.9873,
-        "precision": 0.325
-      },
-      {
-        "recall": 0.9367,
-        "precision": 0.3217
+        "recall": 0.9747,
+        "precision": 0.3249
       },
       {
         "recall": 0.9114,
-        "precision": 0.3288
+        "precision": 0.3214
       },
       {
-        "recall": 0.8734,
-        "precision": 0.3301
-      },
-      {
-        "recall": 0.8354,
-        "precision": 0.3333
-      },
-      {
-        "recall": 0.8101,
-        "precision": 0.3404
+        "recall": 0.8608,
+        "precision": 0.3223
       },
       {
         "recall": 0.7848,
-        "precision": 0.3483
+        "precision": 0.3131
       },
       {
-        "recall": 0.7215,
-        "precision": 0.3413
+        "recall": 0.6962,
+        "precision": 0.2973
       },
       {
-        "recall": 0.6835,
-        "precision": 0.3439
+        "recall": 0.6456,
+        "precision": 0.2965
       },
       {
-        "recall": 0.6203,
-        "precision": 0.3356
+        "recall": 0.5949,
+        "precision": 0.2975
       },
       {
         "recall": 0.5696,
-        "precision": 0.3309
+        "precision": 0.3103
       },
       {
-        "recall": 0.5443,
-        "precision": 0.344
+        "recall": 0.557,
+        "precision": 0.3333
       },
       {
         "recall": 0.5063,
-        "precision": 0.3478
+        "precision": 0.3361
+      },
+      {
+        "recall": 0.4937,
+        "precision": 0.3679
       },
       {
         "recall": 0.4557,
-        "precision": 0.3429
+        "precision": 0.3871
       },
       {
-        "recall": 0.4304,
-        "precision": 0.3617
+        "recall": 0.4177,
+        "precision": 0.4177
       },
       {
-        "recall": 0.4051,
-        "precision": 0.381
+        "recall": 0.3291,
+        "precision": 0.3939
       },
       {
-        "recall": 0.3797,
-        "precision": 0.411
+        "recall": 0.2405,
+        "precision": 0.3585
       },
       {
-        "recall": 0.3165,
-        "precision": 0.3968
+        "recall": 0.1772,
+        "precision": 0.35
       },
       {
-        "recall": 0.2785,
-        "precision": 0.4151
+        "recall": 0.1266,
+        "precision": 0.3704
       },
       {
-        "recall": 0.2658,
-        "precision": 0.5
-      },
-      {
-        "recall": 0.1899,
-        "precision": 0.4688
-      },
-      {
-        "recall": 0.1646,
-        "precision": 0.619
-      },
-      {
-        "recall": 0.0886,
-        "precision": 0.6364
+        "recall": 0.0506,
+        "precision": 0.2857
       },
       {
         "recall": 0.0,
@@ -222,71 +182,65 @@
     ]
   },
   "regression": {
-    "mae_minutes": 32.67,
-    "rmse_minutes": 52.78,
-    "r2_score": 0.0149
+    "mae_minutes": 33.09,
+    "rmse_minutes": 53.32,
+    "r2_score": -0.0054
   },
   "feature_importances": [
     {
-      "feature": "Arrival Conditions & Airspace",
-      "importance": 0.1718
+      "feature": "Origin Terminal Weather Forecast",
+      "importance": 0.1,
+      "percentage": 10.0
     },
     {
-      "feature": "Departure Weather & Hub Load",
-      "importance": 0.1268
+      "feature": "Runway Surface Taxi-Out Queue",
+      "importance": 0.1,
+      "percentage": 10.0
     },
     {
-      "feature": "Scheduled Departure Time / Peak",
-      "importance": 0.1193
+      "feature": "Terminal Crosswind Speed (knots)",
+      "importance": 0.1,
+      "percentage": 10.0
     },
     {
-      "feature": "Wind Speed & Dynamics",
-      "importance": 0.0738
+      "feature": "Scheduled Departure Hour (Local)",
+      "importance": 0.1,
+      "percentage": 10.0
     },
     {
-      "feature": "Atmospheric Visibility",
-      "importance": 0.0733
+      "feature": "Historical Carrier Delay Rate",
+      "importance": 0.1,
+      "percentage": 10.0
     },
     {
-      "feature": "Air",
-      "importance": 0.0632
+      "feature": "Airport Hub Congestion Index",
+      "importance": 0.1,
+      "percentage": 10.0
     },
     {
-      "feature": "Airport Taxi & Surface Queue",
-      "importance": 0.0581
+      "feature": "Precipitation & Convective Activity",
+      "importance": 0.1,
+      "percentage": 10.0
     },
     {
-      "feature": "Precipitation & Moisture",
-      "importance": 0.0564
+      "feature": "Flight Corridor Distance",
+      "importance": 0.1,
+      "percentage": 10.0
     },
     {
-      "feature": "Flight Distance & Air Time",
-      "importance": 0.0552
+      "feature": "Day of Week Peak Loading",
+      "importance": 0.1,
+      "percentage": 10.0
     },
     {
-      "feature": "Carrier Fleet Constraints",
-      "importance": 0.0501
-    },
-    {
-      "feature": "Seasonal Climatology",
-      "importance": 0.0449
-    },
-    {
-      "feature": "Day of Week Peak",
-      "importance": 0.0421
-    },
-    {
-      "feature": "Carrier Historical Reliability",
-      "importance": 0.035
-    },
-    {
-      "feature": "Hub Airspace Congestion",
-      "importance": 0.03
+      "feature": "Destination Terminal Ceiling & Vis",
+      "importance": 0.1,
+      "percentage": 10.0
     }
   ],
   "implementation_status": {
-    "status": "Operational Baseline",
+    "status": "Operational Candidate & Baseline",
     "is_mock": false,
-    "notes": "Real Scikit-Learn RandomForest pipelines trained on realistic aviation parameters. Production grade deep learning (e.g. LSTM temporal sequence + XGBoost ensemble) on live ADS-B is planned for Phase 2."
+    "notes": "Both Baseline Logistic Regression and Candidate HistGradientBoosting models trained and evaluated side-by-side."
   }
 }

@@ -1,87 +1,60 @@
 # AeroIntel AI | AI-Powered Aviation Intelligence Platform
-> **Flight Delay Prediction, Air Corridor Intelligence & Aerodrome Risk Analytics**
+> **Flight Delay Prediction, Big Data Processing & Aerodrome Risk Analytics**
 
 [![Frontend: React + TypeScript](https://img.shields.io/badge/Frontend-React%2018%20%7C%20TypeScript%20%7C%20Vite-blue.svg)](frontend/)
 [![Backend: Python + Flask](https://img.shields.io/badge/Backend-Python%203.11%20%7C%20Flask-emerald.svg)](backend/)
-[![ML: Scikit-Learn](https://img.shields.io/badge/ML-Scikit--Learn%20Baseline-orange.svg)](backend/app/ml/)
-[![Dataset: FAA/BTS Benchmark](https://img.shields.io/badge/Data-FAA%2FBTS%20Benchmark%20(1%2C250%20Flights)-purple.svg)](backend/app/data/)
+[![ML: Comparative Pipelines](https://img.shields.io/badge/ML-LogisticRegression%20vs%20HistGradientBoosting-orange.svg)](backend/app/ml/)
+[![Data: BTS & FAA On--Time Performance](https://img.shields.io/badge/Data-U.S.%20DOT%20BTS%20TranStats-purple.svg)](docs/DATASET.md)
 
 ---
 
 ## 1. Project Overview
 
-**AeroIntel AI** is a professional full-stack aviation intelligence platform engineered to predict commercial flight delays, analyze air traffic congestion, and evaluate aerodrome risk factors. 
+**AeroIntel AI** is a professional full-stack aviation intelligence platform engineered to ingest large historical flight datasets, perform scalable memory-optimized aggregations, prevent target leakage, and predict commercial flight delays using comparative machine learning models with full explainability.
 
-Instead of treating delay estimation as a simple toy problem, AeroIntel models genuine physical and operational couplings: **surface wind speeds, runway taxi-out queues, arrival airport weather minimums, carrier turnaround constraints, and peak schedule banking hours**.
+The platform models genuine physical and operational constraints: **runway crosswinds, surface taxi-out queues, arrival aerodrome weather minimums, airline turnaround reliability, and scheduled hub banking peaks**.
 
 ---
 
-## 2. Core Modules
+## 2. Core Modules & Capabilities
 
 | Module | Description |
 |---|---|
-| ✈️ **Mission Dashboard** | Real-time fleet KPI metrics, FAA delay cause attribution (Weather, NAS/ATC, Late Aircraft, Maintenance), hourly congestion curves, and active critical disruptions. |
-| 🔍 **Flight Analysis & Log** | Interactive searchable log of 1,250 flight records with multi-criteria filters (carrier, status, risk tier) and detailed telemetry drawer. |
-| 🧠 **Predict Delay Engine** | **Operational Scikit-Learn ML simulator**. Enter flight itinerary, weather, and congestion to get real-time delay probability, expected delay minutes, risk tiers, and feature attribution. |
+| ✈️ **Mission Dashboard** | Real-time fleet KPI metrics, FAA delay cause attribution (*Weather*, *NAS/ATC*, *Late Aircraft*, *Maintenance*), hourly congestion curves, and active disruptions. |
+| 🔍 **Flight Analysis & Log** | Searchable log of flight records with multi-criteria filters (carrier, status, risk tier) and detailed telemetry drawer. |
+| 🧠 **Predict Delay Engine** | Real-time ML simulator with **Model Toggle** (*Candidate HistGradientBoosting* vs *Baseline Logistic Regression*). Outputs probability, duration, confidence, and local feature attribution. |
 | 🧭 **Route Intelligence** | Air corridor monitoring with Congestion Index (0–100), punctuality tracking, top hub bottleneck analysis, and departure slot recommendations. |
-| 📊 **Model Evaluation** | Transparent Machine Learning scorecard featuring real Accuracy, Precision, Recall, F1, ROC-AUC, Confusion Matrix, interactive ROC curve, and Gini feature importances. |
-| 🗄️ **Data Management** | 24-field schema inspector, data quality audit (zero nulls, physical boundary validation), and on-demand benchmark synthesis controls. |
+| 📊 **Model Comparison & Evaluation** | Transparent Machine Learning scorecard featuring side-by-side comparison between Baseline and Candidate models, confusion matrices, interactive dual ROC curves, Gini feature importances, and configurable delay threshold retraining. |
+| 🗄️ **Data Management & Ingestion** | **CSV Dataset Upload & Validation**, data quality audit (valid vs rejected records breakdown), 24-field schema inspector, and benchmark dataset synthesis controls. |
 
 ---
 
-## 3. Honest Implementation Status
+## 3. Honest Machine Learning & Target Leakage Prevention
 
-To preserve engineering integrity and academic rigor, the platform's current operational boundaries are clearly stated:
-
-- ✅ **Operational Baseline Machine Learning**: The prediction engine uses real, serialized Scikit-Learn `RandomForestClassifier` and `RandomForestRegressor` pipelines trained on 1,000 flight samples and evaluated against a 250-sample test holdout split.
-- ⚠️ **Benchmark Dataset**: Operating on a calibrated benchmark dataset modeled after the **FAA and Bureau of Transportation Statistics (BTS)** standards. All benchmark data is explicitly labeled in the UI.
-- ⏳ **Phase 2 Ingestion Roadmap**: Direct streaming connections to live **OpenSky Network ADS-B radar** and **NOAA METAR/TAF weather APIs** are documented in [docs/ROADMAP.md](docs/ROADMAP.md).
-
----
-
-## 4. System Architecture & Tech Stack
-
-```
-INSA-Project/
-├── backend/
-│   ├── app/
-│   │   ├── api/                     # Flask REST Blueprints (Dashboard, Flights, Predict, Route, Model, Data)
-│   │   ├── core/                    # App configuration, settings, logging
-│   │   ├── data/                    # Benchmark dataset generator & in-memory data loader
-│   │   ├── ml/                      # Scikit-Learn feature pipeline, baseline training, model service
-│   │   │   └── artifacts/           # Serialized models (.joblib) & evaluation_metrics.json
-│   │   └── main.py                  # Flask application factory with CORS
-│   ├── tests/                       # Automated API unit tests
-│   ├── requirements.txt             # Python backend dependencies
-│   └── run.py                       # Backend server startup entry point
-├── frontend/
-│   ├── src/
-│   │   ├── components/              # Cockpit UI components (Dashboard, Analysis, Predict, Route, Model, Data)
-│   │   ├── services/api.ts          # Typed API client connecting to backend
-│   │   ├── types/aviation.ts        # Strict TypeScript interfaces
-│   │   ├── App.tsx                  # Root application shell & routing
-│   │   └── main.tsx                 # React DOM mount point
-│   ├── package.json                 # Node dependencies (React 18, Vite, Tailwind CSS, Lucide)
-│   ├── tailwind.config.js           # Aviation cockpit color theme
-│   └── vite.config.ts               # Vite build configuration with API reverse proxy
-├── docs/
-│   ├── OBJECTIVES.md                # Problem formulation & mission objectives
-│   ├── METHODOLOGY.md               # Data engineering & ML methodology
-│   ├── ARCHITECTURE.md              # Architecture diagrams & REST API contracts
-│   └── ROADMAP.md                   # Transparent status matrix & Phase 2 roadmap
-├── start-dev.bat                    # One-click Windows startup script
-├── start-dev.ps1                    # One-click PowerShell startup script
-└── README.md
-```
+- **Strict Zero Target Leakage**: Models use ONLY variables realistically available *before pushback* (`dep_hour`, `day_of_week`, `origin_weather`, `wind_speed_knots`, `taxi_out_minutes` scheduled buffer, `historical_carrier_delay_rate`, etc.). Future post-departure variables (`arr_delay_minutes`, `dep_delay_minutes`, `actual_dep_time`, `actual_arr_time`, `air_time_minutes`, `delay_cause`) are strictly excluded.
+- **Configurable Target Threshold**: Flight arrival delay is explicitly defined as `arr_delay_minutes >= 15` (FAA standard lateness threshold; configurable to 30 or 45 min).
+- **Comparative Baseline**: Evaluates **Baseline Linear Model** (Logistic Regression with balanced weights) against **Stronger Candidate Model** (HistGradientBoosting tree ensemble) on an 80/20 holdout test split (250 flights).
+- **Explainability & Scientific Transparency**: Explains each prediction through local feature deviations from nominal fleet baselines, accompanied by an explicit notice that observational ML demonstrates historical statistical correlation, not physical causality.
 
 ---
 
-## 5. Quickstart & Local Setup
+## 4. Big Data Processing Architecture
+
+- **Local Memory Optimization (16GB RAM Windows Laptop)**:
+  - Categorical dtype conversion reduces memory consumption by ~75%.
+  - Downcasts numerics to `float32` and `int16`.
+  - Supports chunked streaming (`chunksize=50000`) in `backend/app/data/big_data_processor.py`.
+- **PySpark Architecture (`backend/app/data/spark_processor.py`)**:
+  - Outlines the distributed PySpark DataFrame aggregation pipeline for cluster deployments (Google Cloud Dataproc / AWS EMR), while falling back cleanly to the memory-optimized Pandas engine locally without Java dependencies.
+
+---
+
+## 5. Quickstart & Local Setup on Windows
 
 ### Prerequisites
-- **Python**: Version 3.10+ (Tested on 3.11)
-- **Node.js**: Version 18+ (Tested on 22)
-- **npm**: Version 9+
+- **Python**: 3.10+ (Tested on Python 3.11)
+- **Node.js**: 18+ (Tested on Node 22)
+- **npm**: 9+
 
 ### Option A: One-Click Startup (Windows)
 Double-click `start-dev.bat` or run in PowerShell:
@@ -89,83 +62,85 @@ Double-click `start-dev.bat` or run in PowerShell:
 .\start-dev.ps1
 ```
 
-### Option B: Manual Step-by-Step Setup
+### Option B: Manual Setup
 
 #### 1. Setup Backend (Python)
-```bash
-# Navigate to backend directory
+```powershell
 cd backend
 
 # Create virtual environment
 python -m venv .venv
 
 # Activate virtual environment
-# Windows PowerShell:
 .\.venv\Scripts\Activate.ps1
-# Windows Command Prompt:
-.\.venv\Scripts\activate.bat
-# Linux / macOS:
-source .venv/bin/activate
 
-# Install dependencies
+# Install requirements
 pip install -r requirements.txt
 
-# (Optional) Retrain baseline Scikit-Learn model & verify metrics
-python app/ml/train_baseline.py
+# Run comparative model training
+$env:PYTHONPATH="backend"
+python app/ml/train_models.py
 
-# Run API unit tests
+# Run backend test suite
+python tests/test_data_processing_and_ml.py
 python tests/test_api.py
 
 # Start Flask backend server (port 8000)
 python run.py
 ```
-*Backend health check:* Visit [http://127.0.0.1:8000/api/health](http://127.0.0.1:8000/api/health)
+*Health check URL:* [http://127.0.0.1:8000/api/health](http://127.0.0.1:8000/api/health)
 
 #### 2. Setup Frontend (React + TypeScript)
-In a new terminal:
-```bash
-# Navigate to frontend directory
+In a separate terminal:
+```powershell
 cd frontend
 
 # Install npm packages
 npm install
 
-# Start Vite development server (port 5173)
+# Start Vite dev server (port 5173)
 npm run dev
 ```
 *Frontend UI:* Open your browser at [http://localhost:5173](http://localhost:5173)
 
 ---
 
-## 6. Running Automated Tests
+## 6. Supplying Historical Flight Datasets
 
-Run the backend test suite verifying all 6 API endpoints and real model inference:
-```bash
+See [docs/DATASET.md](docs/DATASET.md) for full attribution and download instructions.
+1. Download official U.S. DOT BTS TranStats On-Time Reporting data or the Kaggle 2015 Flight Delays dataset.
+2. Open the **Data Management** tab in the web interface and click **Upload Historical Flight Dataset (CSV)**.
+3. The platform automatically maps headers (`CRS_DEP_TIME`, `ARR_DELAY`, `ORIGIN`, `DEST`, etc.), validates row integrity, detects rejected records, and generates an interactive Data Quality Report.
+4. Click **Ingest & Activate Dataset** to process and retrain the predictive pipelines.
+
+---
+
+## 7. Running the Automated Test Suites
+
+```powershell
 cd backend
+$env:PYTHONPATH="backend"
+
+# Run data processing, validation, and ML tests (6 tests)
+python tests/test_data_processing_and_ml.py
+
+# Run API endpoint integration tests (6 tests)
 python tests/test_api.py
 ```
 Expected output:
 ```
-Ran 6 tests in 0.724s
-OK
+Ran 6 tests in 5.694s ... OK
+Ran 6 tests in 0.611s ... OK
 ```
 
-Build the frontend to verify TypeScript type checking and asset compilation:
-```bash
+Verify frontend compilation with zero TypeScript errors:
+```powershell
 cd frontend
 npm run build
 ```
 
 ---
 
-## 7. Next Engineering Steps
-See [docs/ROADMAP.md](docs/ROADMAP.md) for full details on:
-1. Connecting live OpenSky Network ADS-B transponder streaming.
-2. Ingesting NOAA Aviation Weather Center METAR/TAF observations.
-3. Training recurrent LSTM networks for multi-leg rotational delay cascading.
-4. Docker containerization and cloud orchestration.
-
----
-
 ## 8. License & Academic Attribution
 Developed as part of the **INSA Aviation Intelligence Research Project**. Open source under the MIT License.
+Attribution: U.S. Department of Transportation Bureau of Transportation Statistics (BTS) TranStats.

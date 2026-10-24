@@ -13,7 +13,8 @@ import {
   Send,
   Sparkles,
   ArrowRight,
-  Info
+  Info,
+  Scale
 } from 'lucide-react';
 import { PredictionRequest, PredictionResponse } from '../../types/aviation';
 import { aviationApi } from '../../services/api';
@@ -21,12 +22,12 @@ import { DemoDataBanner } from '../Common/DemoDataBanner';
 import { LoadingSpinner } from '../Common/LoadingSpinner';
 
 const CARRIERS = [
-  { code: 'DL', name: 'Delta Air Lines', baseRate: 0.16 },
-  { code: 'UA', name: 'United Airlines', baseRate: 0.21 },
-  { code: 'AA', name: 'American Airlines', baseRate: 0.23 },
-  { code: 'WN', name: 'Southwest Airlines', baseRate: 0.20 },
-  { code: 'B6', name: 'JetBlue Airways', baseRate: 0.27 },
-  { code: 'AS', name: 'Alaska Airlines', baseRate: 0.15 },
+  { code: 'DL', name: 'Delta Air Lines' },
+  { code: 'UA', name: 'United Airlines' },
+  { code: 'AA', name: 'American Airlines' },
+  { code: 'WN', name: 'Southwest Airlines' },
+  { code: 'B6', name: 'JetBlue Airways' },
+  { code: 'AS', name: 'Alaska Airlines' },
 ];
 
 const AIRPORTS = [
@@ -54,6 +55,7 @@ const WEATHER_OPTIONS = [
 ];
 
 export const PredictDelayView: React.FC = () => {
+  const [selectedModelType, setSelectedModelType] = useState<'candidate' | 'baseline'>('candidate');
   const [form, setForm] = useState<PredictionRequest>({
     carrier_code: 'DL',
     origin: 'ATL',
@@ -70,7 +72,7 @@ export const PredictDelayView: React.FC = () => {
     congestion_level: 'High',
     taxi_out_minutes: 32,
     distance_miles: 1946,
-    air_time_minutes: 275,
+    model_type: 'candidate',
   });
 
   const [loading, setLoading] = useState(false);
@@ -87,7 +89,11 @@ export const PredictDelayView: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await aviationApi.predictFlightDelay(form);
+      const payload: PredictionRequest = {
+        ...form,
+        model_type: selectedModelType,
+      };
+      const res = await aviationApi.predictFlightDelay(payload);
       setResult(res);
     } catch (err: any) {
       setError(err.message || 'Failed to execute delay prediction inference');
@@ -99,6 +105,7 @@ export const PredictDelayView: React.FC = () => {
   const handlePresetSelect = (preset: 'storm' | 'clear' | 'rush') => {
     if (preset === 'storm') {
       setForm({
+        ...form,
         carrier_code: 'B6',
         origin: 'JFK',
         dest: 'MIA',
@@ -114,10 +121,10 @@ export const PredictDelayView: React.FC = () => {
         congestion_level: 'Severe',
         taxi_out_minutes: 42,
         distance_miles: 1089,
-        air_time_minutes: 175,
       });
     } else if (preset === 'clear') {
       setForm({
+        ...form,
         carrier_code: 'DL',
         origin: 'ATL',
         dest: 'DFW',
@@ -133,10 +140,10 @@ export const PredictDelayView: React.FC = () => {
         congestion_level: 'Low',
         taxi_out_minutes: 13,
         distance_miles: 731,
-        air_time_minutes: 125,
       });
     } else if (preset === 'rush') {
       setForm({
+        ...form,
         carrier_code: 'UA',
         origin: 'ORD',
         dest: 'SFO',
@@ -152,22 +159,21 @@ export const PredictDelayView: React.FC = () => {
         congestion_level: 'High',
         taxi_out_minutes: 30,
         distance_miles: 1846,
-        air_time_minutes: 260,
       });
     }
   };
 
   return (
     <div className="space-y-6">
-      <DemoDataBanner sectionTitle="AI Delay Prediction Inference Engine" />
+      <DemoDataBanner sectionTitle="AI Delay Prediction & Explainability Engine" />
 
       {/* Preset Scenarios Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-[#1a2947] bg-[#0f172a]/80 p-4">
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-sky-400" /> Quick Simulation Presets
+            <Sparkles className="h-4 w-4 text-sky-400" /> Operational Simulation Presets
           </h3>
-          <p className="text-xs text-slate-400">Load calibrated operational flight scenarios</p>
+          <p className="text-xs text-slate-400">Pre-populate realistic pre-departure flight conditions</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button
@@ -197,13 +203,41 @@ export const PredictDelayView: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Input Parameters Form (7 cols) */}
         <div className="lg:col-span-7 rounded-2xl border border-[#1a2947] bg-[#0f172a]/90 p-6 backdrop-blur-sm">
-          <div className="border-b border-slate-800 pb-3 mb-5">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <BrainCircuit className="h-5 w-5 text-sky-400" /> Flight Simulation Parameters
-            </h3>
-            <p className="text-xs text-slate-400">
-              Input flight itinerary, atmospheric variables, and airport queue metrics
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-5">
+            <div>
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <BrainCircuit className="h-5 w-5 text-sky-400" /> Pre-Departure Flight Parameters
+              </h3>
+              <p className="text-xs text-slate-400">
+                Strict pre-departure features only &bull; Zero target leakage
+              </p>
+            </div>
+
+            {/* Model Architecture Toggle */}
+            <div className="flex items-center gap-1 rounded-xl bg-slate-900 border border-slate-700 p-1">
+              <button
+                type="button"
+                onClick={() => setSelectedModelType('candidate')}
+                className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                  selectedModelType === 'candidate'
+                    ? 'bg-sky-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                HistGradientBoosting
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedModelType('baseline')}
+                className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                  selectedModelType === 'baseline'
+                    ? 'bg-sky-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Logistic Regression
+              </button>
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -376,7 +410,7 @@ export const PredictDelayView: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="text-[11px] font-semibold uppercase text-slate-400 block mb-1">
-                  Wind Speed (knots)
+                  Crosswind Speed (knots)
                 </label>
                 <input
                   type="number"
@@ -390,7 +424,7 @@ export const PredictDelayView: React.FC = () => {
 
               <div>
                 <label className="text-[11px] font-semibold uppercase text-slate-400 block mb-1">
-                  Runway Taxi-Out (min)
+                  Scheduled Taxi-Out (min)
                 </label>
                 <input
                   type="number"
@@ -404,7 +438,7 @@ export const PredictDelayView: React.FC = () => {
 
               <div>
                 <label className="text-[11px] font-semibold uppercase text-slate-400 block mb-1">
-                  Airport Congestion
+                  Airport Hub Congestion
                 </label>
                 <select
                   value={form.congestion_level}
@@ -433,7 +467,7 @@ export const PredictDelayView: React.FC = () => {
                 ) : (
                   <>
                     <BrainCircuit className="h-4 w-4" />
-                    <span>Run AI Delay Prediction</span>
+                    <span>Run AI Delay Prediction ({selectedModelType === 'candidate' ? 'HistGradientBoosting' : 'LogisticRegression'})</span>
                   </>
                 )}
               </button>
@@ -450,14 +484,14 @@ export const PredictDelayView: React.FC = () => {
                   <span className="text-[10px] font-mono uppercase tracking-wider text-sky-400 font-bold block">
                     Inference Output
                   </span>
-                  <h3 className="text-base font-bold text-white">Delay Risk Assessment</h3>
+                  <h3 className="text-base font-bold text-white">{result.prediction.model_name}</h3>
                 </div>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                  {result.prediction.model_version}
+                  v{result.prediction.model_version}
                 </span>
               </div>
 
-              {/* Probability & Delay Minutes Big Callouts */}
+              {/* Probability & Delay Minutes */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 text-center">
                   <span className="text-[10px] text-slate-400 uppercase tracking-wider block">
@@ -470,7 +504,7 @@ export const PredictDelayView: React.FC = () => {
                     {result.prediction.delay_probability_pct}%
                   </div>
                   <span className="text-[10px] text-slate-400 mt-1 block">
-                    {result.prediction.delay_probability >= 0.5 ? 'Delay Predicted (>15m)' : 'On-Time Expected'}
+                    Threshold: &ge;{result.prediction.delay_threshold_minutes}m lateness
                   </span>
                 </div>
 
@@ -503,34 +537,42 @@ export const PredictDelayView: React.FC = () => {
                 <span className="font-mono text-[10px]">Conf: {result.prediction.confidence_score}</span>
               </div>
 
-              {/* Contributing Risk Factors */}
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 flex items-center gap-1.5">
-                  <Info className="h-3.5 w-3.5 text-sky-400" /> Primary Contributing Factors
-                </h4>
-                <div className="space-y-2">
-                  {result.contributing_factors.map((factor, i) => (
-                    <div
-                      key={i}
-                      className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-3 text-xs"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-white">{factor.factor}</span>
-                        <span
-                          className={`font-mono text-[11px] font-bold ${
-                            factor.score > 0 ? 'text-rose-400' : 'text-emerald-400'
-                          }`}
-                        >
-                          {factor.score > 0 ? `+${factor.score}` : `${factor.score}`} impact
-                        </span>
+              {/* Local Feature Attribution Breakdown */}
+              {result.explanation && (
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 flex items-center gap-1.5">
+                    <Info className="h-3.5 w-3.5 text-sky-400" /> Feature Attribution Breakdown
+                  </h4>
+                  <div className="space-y-2">
+                    {result.explanation.attributions.map((attr, i) => (
+                      <div
+                        key={i}
+                        className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-3 text-xs"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-white">{attr.feature}</span>
+                          <span
+                            className={`font-mono text-[11px] font-bold ${
+                              attr.impact_pct > 0 ? 'text-rose-400' : 'text-emerald-400'
+                            }`}
+                          >
+                            {attr.impact_pct > 0 ? `+${attr.impact_pct}%` : `${attr.impact_pct}%`}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                          {attr.description}
+                        </p>
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                        {factor.description}
-                      </p>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+
+                  {/* Causality Disclaimer */}
+                  <div className="mt-3 rounded-xl border border-slate-800 bg-slate-900/80 p-3 text-[10px] text-slate-400 leading-normal">
+                    <strong className="text-sky-300 block mb-0.5">Statistical Correlation Notice:</strong>
+                    {result.explanation.causality_disclaimer}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Dispatch Recommendations */}
               <div className="rounded-xl border border-sky-500/20 bg-sky-950/20 p-3.5 text-xs">
@@ -549,7 +591,7 @@ export const PredictDelayView: React.FC = () => {
               </div>
               <h4 className="text-sm font-bold text-white">Inference Engine Ready</h4>
               <p className="text-xs text-slate-400 max-w-xs mt-1">
-                Configure flight parameters on the left or click a preset to trigger real-time Scikit-Learn baseline delay prediction.
+                Configure flight parameters on the left and select either HistGradientBoosting or LogisticRegression to execute real inference.
               </p>
             </div>
           )}

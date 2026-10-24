@@ -2,6 +2,7 @@ export type RiskTier = 'Low' | 'Moderate' | 'High' | 'Severe';
 
 export interface Flight {
   flight_id: string;
+  flight_date?: string;
   carrier_code: string;
   carrier_name: string;
   origin: string;
@@ -10,7 +11,7 @@ export interface Flight {
   dest_name: string;
   route: string;
   distance_miles: number;
-  air_time_minutes: number;
+  air_time_minutes?: number;
   scheduled_dep_time: string;
   dep_hour: number;
   dep_minute: number;
@@ -96,13 +97,25 @@ export interface PredictionRequest {
   congestion_level: string;
   taxi_out_minutes: number;
   distance_miles?: number;
-  air_time_minutes?: number;
   historical_carrier_delay_rate?: number;
+  model_type?: 'candidate' | 'baseline';
+}
+
+export interface AttributionItem {
+  feature: string;
+  value?: string;
+  direction: string;
+  impact_pct: number;
+  association_type: string;
+  description: string;
 }
 
 export interface PredictionResponse {
   flight_query: Record<string, any>;
   prediction: {
+    model_type: string;
+    model_name: string;
+    model_version: string;
     delay_probability: number;
     delay_probability_pct: number;
     is_delayed_predicted: boolean;
@@ -110,8 +123,13 @@ export interface PredictionResponse {
     risk_tier: string;
     risk_color: string;
     confidence_score: number;
-    model_version: string;
-    inference_engine: string;
+    delay_threshold_minutes: number;
+  };
+  explanation?: {
+    model_used: string;
+    delay_probability_pct: number;
+    attributions: AttributionItem[];
+    causality_disclaimer: string;
   };
   contributing_factors: {
     factor: string;
@@ -126,14 +144,16 @@ export interface RouteCorridor {
   route: string;
   origin: string;
   dest: string;
-  flights_count: number;
-  delayed_count: number;
+  total_flights?: number;
+  flights_count?: number;
+  delayed_count?: number;
+  delayed_flights?: number;
   on_time_pct: number;
   avg_delay_minutes: number;
   avg_taxi_minutes: number;
   congestion_index: number;
   distance_miles: number;
-  active_carriers: string[];
+  active_carriers?: string[];
 }
 
 export interface AirportHub {
@@ -151,6 +171,55 @@ export interface RouteIntelligenceData {
   corridors: RouteCorridor[];
   hubs: AirportHub[];
   selected_corridor?: RouteCorridor | null;
+}
+
+export interface ModelClassificationMetrics {
+  model_name: string;
+  accuracy: number;
+  precision: number;
+  recall: number;
+  f1_score: number;
+  roc_auc: number;
+  pr_auc?: number;
+  algorithm?: string;
+  type?: string;
+  pros?: string;
+  cons?: string;
+  confusion_matrix: {
+    true_negative: number;
+    false_positive: number;
+    false_negative: number;
+    true_positive: number;
+  };
+  roc_curve: { fpr: number; tpr: number }[];
+  pr_curve: { recall: number; precision: number }[];
+}
+
+export interface ModelComparisonData {
+  timestamp: string;
+  delay_threshold_minutes: number;
+  dataset_size: number;
+  train_samples: number;
+  test_samples: number;
+  class_distribution: {
+    on_time_count: number;
+    delayed_count: number;
+    delay_rate_pct: number;
+    naive_majority_accuracy: number;
+  };
+  baseline_model: ModelClassificationMetrics;
+  candidate_model: ModelClassificationMetrics;
+  regression: {
+    mae_minutes: number;
+    rmse_minutes: number;
+    r2_score: number;
+  };
+  feature_importances: { feature: string; importance: number; percentage: number }[];
+  tradeoff_explanation: {
+    precision_significance: string;
+    recall_significance: string;
+    causality_disclaimer: string;
+  };
 }
 
 export interface ModelEvaluationData {
@@ -187,6 +256,22 @@ export interface ModelEvaluationData {
   };
 }
 
+export interface DataQualityReport {
+  source_name: string;
+  delay_threshold_minutes: number;
+  total_input_records: number;
+  valid_records: number;
+  rejected_records: number;
+  acceptance_rate_pct: number;
+  rejection_breakdown: Record<string, number>;
+  clean_features_count: number;
+  class_distribution: {
+    on_time_count: number;
+    delayed_count: number;
+    delay_rate_pct: number;
+  };
+}
+
 export interface DataManagementInfo {
   dataset_name: string;
   file_path: string;
@@ -210,4 +295,5 @@ export interface DataManagementInfo {
     live_stream_connected: boolean;
     live_stream_notes: string;
   };
+  quality_report?: DataQualityReport;
 }

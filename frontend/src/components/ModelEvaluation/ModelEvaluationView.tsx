@@ -10,230 +10,308 @@ import {
   TrendingUp,
   Activity,
   Layers,
-  Clock
+  Clock,
+  Scale,
+  Sliders
 } from 'lucide-react';
-import { ModelEvaluationData } from '../../types/aviation';
+import { ModelComparisonData } from '../../types/aviation';
 import { aviationApi } from '../../services/api';
 import { DemoDataBanner } from '../Common/DemoDataBanner';
 import { LoadingSpinner } from '../Common/LoadingSpinner';
 
 export const ModelEvaluationView: React.FC = () => {
-  const [data, setData] = useState<ModelEvaluationData | null>(null);
+  const [data, setData] = useState<ModelComparisonData | null>(null);
   const [loading, setLoading] = useState(true);
   const [retraining, setRetraining] = useState(false);
-  const [retrainMessage, setRetrainMessage] = useState<string | null>(null);
+  const [thresholdInput, setThresholdInput] = useState<number>(15);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
-  const fetchMetrics = async () => {
+  const fetchComparison = async () => {
     try {
       setLoading(true);
-      const res = await aviationApi.getModelEvaluation();
+      const res = await aviationApi.getModelComparison();
       setData(res);
+      if (res.delay_threshold_minutes) {
+        setThresholdInput(res.delay_threshold_minutes);
+      }
     } catch (err) {
-      console.error('Failed to load model evaluation metrics:', err);
+      console.error('Failed to load comparative model metrics:', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchMetrics();
+    fetchComparison();
   }, []);
 
   const handleRetrain = async () => {
     try {
       setRetraining(true);
-      setRetrainMessage(null);
-      const res = await aviationApi.retrainModel();
+      setActionMessage(null);
+      const res = await aviationApi.retrainModel(thresholdInput);
       setData(res.data);
-      setRetrainMessage('Model retrained and evaluated successfully with Scikit-Learn.');
+      setActionMessage(`Both models retrained and evaluated with ${thresholdInput}-minute lateness threshold!`);
     } catch (err: any) {
-      setRetrainMessage(`Retraining failed: ${err.message}`);
+      setActionMessage(`Retraining failed: ${err.message}`);
     } finally {
       setRetraining(false);
     }
   };
 
   if (loading || !data) {
-    return <LoadingSpinner message="Loading Scikit-Learn evaluation telemetry & confusion matrix..." />;
+    return <LoadingSpinner message="Calculating comparative holdout evaluation metrics (LogisticRegression vs HistGradientBoosting)..." />;
   }
 
-  const { classification, regression, feature_importances, implementation_status } = data;
-  const cm = classification.confusion_matrix;
+  const { baseline_model, candidate_model, class_distribution, regression, feature_importances, tradeoff_explanation } = data;
 
   return (
     <div className="space-y-6">
-      <DemoDataBanner sectionTitle="Machine Learning Model Evaluation & Transparency" />
+      <DemoDataBanner sectionTitle="Comparative Model Evaluation & Scientific Scorecards" />
 
-      {/* Honest Implementation Status Banner */}
+      {/* Retrain & Configurable Threshold Bar */}
       <div className="rounded-2xl border border-sky-500/30 bg-sky-950/20 p-5 backdrop-blur-sm">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="rounded-xl bg-sky-500/20 p-2.5 text-sky-400 border border-sky-500/40">
-              <ShieldCheck className="h-6 w-6" />
+            <div className="rounded-xl bg-sky-500/20 p-2.5 text-sky-400 border border-sky-500/40 shrink-0">
+              <Scale className="h-6 w-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-white">Honest Implementation Status: Baseline Scikit-Learn</h3>
+                <h3 className="text-sm font-bold text-white">Comparative Evaluation: Baseline vs Candidate Model</h3>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                  {implementation_status.status}
+                  Holdout Test Split (20% = {data.test_samples} Flights)
                 </span>
               </div>
               <p className="text-xs text-slate-300 mt-1 max-w-3xl leading-relaxed">
-                {implementation_status.notes}
+                Evaluates linear baseline (Logistic Regression) against non-linear tree ensemble (HistGradientBoosting) on strict pre-departure features. Zero target leakage.
               </p>
             </div>
           </div>
 
-          <button
-            onClick={handleRetrain}
-            disabled={retraining}
-            className="flex items-center gap-2 rounded-xl bg-slate-800 border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition-all disabled:opacity-50 shrink-0"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${retraining ? 'animate-spin text-sky-400' : 'text-slate-400'}`} />
-            <span>{retraining ? 'Fitting Pipelines...' : 'Retrain Baseline Model'}</span>
-          </button>
+          <div className="flex items-center gap-3 w-full lg:w-auto">
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-slate-400 whitespace-nowrap">Delay Threshold:</span>
+              <select
+                value={thresholdInput}
+                onChange={(e) => setThresholdInput(parseInt(e.target.value))}
+                className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white font-mono focus:border-sky-500 focus:outline-none"
+              >
+                <option value={15}>15 Minutes (FAA Standard)</option>
+                <option value={30}>30 Minutes (Moderate Delay)</option>
+                <option value={45}>45 Minutes (Severe Delay)</option>
+              </select>
+            </div>
+
+            <button
+              onClick={handleRetrain}
+              disabled={retraining}
+              className="flex items-center gap-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold px-4 py-2 text-xs shadow-md transition-all disabled:opacity-50 shrink-0"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${retraining ? 'animate-spin text-white' : ''}`} />
+              <span>{retraining ? 'Fitting Pipelines...' : 'Retrain & Re-Evaluate'}</span>
+            </button>
+          </div>
         </div>
 
-        {retrainMessage && (
+        {actionMessage && (
           <div className="mt-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-3 py-2 text-xs text-emerald-300">
-            {retrainMessage}
+            {actionMessage}
           </div>
         )}
       </div>
 
-      {/* Top Classification Metrics Scorecards */}
-      <div>
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
-          <Activity className="h-4 w-4 text-sky-400" /> Delay Classification Scorecards (Test Split = 250 Flights)
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          <div className="rounded-xl border border-slate-800 bg-[#0f172a]/90 p-4 text-center">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Accuracy</span>
-            <span className="text-2xl font-bold font-mono text-white mt-1 block">
-              {(classification.accuracy * 100).toFixed(1)}%
+      {/* Class Distribution & Zero-Intelligence Dummy Baseline */}
+      <div className="rounded-2xl border border-slate-800 bg-[#0f172a]/90 p-5 backdrop-blur-sm">
+        <div className="flex items-center justify-between mb-3 border-b border-slate-800 pb-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+            <Activity className="h-4 w-4 text-sky-400" /> Class Distribution & Baseline Majority Benchmark
+          </span>
+          <span className="text-xs font-mono text-slate-400">Total Dataset: {data.dataset_size} records</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-center text-xs">
+          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+            <span className="text-[10px] text-slate-400 uppercase tracking-wider block">On-Time Flights (&lt;{data.delay_threshold_minutes}m)</span>
+            <span className="text-xl font-bold font-mono text-emerald-400 mt-1 block">
+              {class_distribution.on_time_count} flts ({(100 - class_distribution.delay_rate_pct).toFixed(1)}%)
             </span>
-            <span className="text-[10px] text-slate-400 mt-0.5 block">Overall Correctness</span>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-[#0f172a]/90 p-4 text-center">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Precision</span>
-            <span className="text-2xl font-bold font-mono text-sky-400 mt-1 block">
-              {(classification.precision * 100).toFixed(1)}%
+          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+            <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Delayed Flights (&ge;{data.delay_threshold_minutes}m)</span>
+            <span className="text-xl font-bold font-mono text-rose-400 mt-1 block">
+              {class_distribution.delayed_count} flts ({class_distribution.delay_rate_pct}%)
             </span>
-            <span className="text-[10px] text-slate-400 mt-0.5 block">True Delay Alerts</span>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-[#0f172a]/90 p-4 text-center">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Recall</span>
-            <span className="text-2xl font-bold font-mono text-amber-400 mt-1 block">
-              {(classification.recall * 100).toFixed(1)}%
-            </span>
-            <span className="text-[10px] text-slate-400 mt-0.5 block">Delays Detected</span>
-          </div>
-
-          <div className="rounded-xl border border-slate-800 bg-[#0f172a]/90 p-4 text-center">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider block">F1 Score</span>
-            <span className="text-2xl font-bold font-mono text-purple-400 mt-1 block">
-              {classification.f1_score.toFixed(3)}
-            </span>
-            <span className="text-[10px] text-slate-400 mt-0.5 block">Harmonic Mean</span>
-          </div>
-
-          <div className="rounded-xl border border-slate-800 bg-[#0f172a]/90 p-4 text-center">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider block">ROC-AUC</span>
-            <span className="text-2xl font-bold font-mono text-emerald-400 mt-1 block">
-              {classification.roc_auc.toFixed(3)}
-            </span>
-            <span className="text-[10px] text-slate-400 mt-0.5 block">Discrimination Power</span>
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 sm:col-span-2 text-left">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase font-bold text-amber-300">Naive Majority Dummy Accuracy</span>
+              <span className="font-mono font-bold text-white text-base">{(class_distribution.naive_majority_accuracy * 100).toFixed(1)}%</span>
+            </div>
+            <p className="text-[11px] text-amber-200 mt-1 leading-normal">
+              A naive zero-intelligence model guessing "Always On-Time" achieves {(class_distribution.naive_majority_accuracy * 100).toFixed(1)}% accuracy but has 0% recall on delays. This is why ROC-AUC, F1, and PR-AUC are far more meaningful than raw accuracy.
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Regression & Duration Metrics */}
-      <div>
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
-          <Clock className="h-4 w-4 text-sky-400" /> Delay Duration Regressor (Minutes Error)
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="rounded-xl border border-slate-800 bg-[#0f172a]/90 p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider">Mean Absolute Error (MAE)</span>
-              <span className="text-xs font-mono text-sky-400 font-bold">Standard</span>
+      {/* Side-by-Side Model Comparison Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Candidate Model Card */}
+        <div className="rounded-2xl border border-sky-500/40 bg-[#0f172a]/95 p-6 backdrop-blur-sm space-y-4 shadow-lg shadow-sky-500/5">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div>
+              <span className="text-[10px] font-mono uppercase text-sky-400 font-bold block">Recommended Model</span>
+              <h3 className="text-base font-bold text-white">{candidate_model.model_name}</h3>
+              <p className="text-[11px] text-slate-400 mt-0.5">{candidate_model.algorithm}</p>
             </div>
-            <span className="text-2xl font-bold font-mono text-white mt-1 block">
-              &plusmn;{regression.mae_minutes} min
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30">
+              Non-Linear Ensemble
             </span>
-            <p className="text-[10px] text-slate-400 mt-1">Average discrepancy in predicted late arrival</p>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-[#0f172a]/90 p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider">Root Mean Squared (RMSE)</span>
-              <span className="text-xs font-mono text-slate-400">Outlier Penalty</span>
+          <div className="grid grid-cols-3 gap-2 text-center text-xs">
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-2.5">
+              <span className="text-[10px] text-slate-400 block">ROC-AUC</span>
+              <span className="text-xl font-bold font-mono text-emerald-400 mt-0.5 block">{candidate_model.roc_auc.toFixed(3)}</span>
             </div>
-            <span className="text-2xl font-bold font-mono text-white mt-1 block">
-              {regression.rmse_minutes} min
-            </span>
-            <p className="text-[10px] text-slate-400 mt-1">Sensitivity to extreme storm ground stop delays</p>
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-2.5">
+              <span className="text-[10px] text-slate-400 block">F1 Score</span>
+              <span className="text-xl font-bold font-mono text-purple-400 mt-0.5 block">{candidate_model.f1_score.toFixed(3)}</span>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-2.5">
+              <span className="text-[10px] text-slate-400 block">Accuracy</span>
+              <span className="text-xl font-bold font-mono text-white mt-0.5 block">{(candidate_model.accuracy * 100).toFixed(1)}%</span>
+            </div>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-[#0f172a]/90 p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider">R-Squared (R&sup2;)</span>
-              <span className="text-xs font-mono text-slate-400">Variance Explained</span>
+          <div className="grid grid-cols-2 gap-2 text-center text-xs">
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-2.5">
+              <span className="text-[10px] text-slate-400 block">Precision</span>
+              <span className="text-lg font-bold font-mono text-sky-400 mt-0.5 block">{(candidate_model.precision * 100).toFixed(1)}%</span>
             </div>
-            <span className="text-2xl font-bold font-mono text-white mt-1 block">
-              {regression.r2_score.toFixed(3)}
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-2.5">
+              <span className="text-[10px] text-slate-400 block">Recall</span>
+              <span className="text-lg font-bold font-mono text-amber-400 mt-0.5 block">{(candidate_model.recall * 100).toFixed(1)}%</span>
+            </div>
+          </div>
+
+          {/* Confusion Matrix */}
+          <div>
+            <span className="text-xs font-semibold text-slate-300 block mb-1.5">Confusion Matrix (Test Split)</span>
+            <div className="grid grid-cols-2 gap-2 text-center font-mono text-xs">
+              <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
+                TN: <strong className="text-white text-sm">{candidate_model.confusion_matrix.true_negative}</strong>
+                <span className="block text-[10px] text-slate-400">On-Time Correct</span>
+              </div>
+              <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300">
+                FP: <strong className="text-white text-sm">{candidate_model.confusion_matrix.false_positive}</strong>
+                <span className="block text-[10px] text-slate-400">False Alarms</span>
+              </div>
+              <div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300">
+                FN: <strong className="text-white text-sm">{candidate_model.confusion_matrix.false_negative}</strong>
+                <span className="block text-[10px] text-slate-400">Missed Delays</span>
+              </div>
+              <div className="p-2 rounded-lg bg-sky-500/10 border border-sky-500/30 text-sky-300">
+                TP: <strong className="text-white text-sm">{candidate_model.confusion_matrix.true_positive}</strong>
+                <span className="block text-[10px] text-slate-400">Delays Caught</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Baseline Model Card */}
+        <div className="rounded-2xl border border-slate-800 bg-[#0f172a]/95 p-6 backdrop-blur-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div>
+              <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">Statistical Reference</span>
+              <h3 className="text-base font-bold text-white">{baseline_model.model_name}</h3>
+              <p className="text-[11px] text-slate-400 mt-0.5">{baseline_model.algorithm}</p>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+              Linear Baseline
             </span>
-            <p className="text-[10px] text-slate-400 mt-1">Proportion of variance captured by features</p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 text-center text-xs">
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-2.5">
+              <span className="text-[10px] text-slate-400 block">ROC-AUC</span>
+              <span className="text-xl font-bold font-mono text-emerald-400 mt-0.5 block">{baseline_model.roc_auc.toFixed(3)}</span>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-2.5">
+              <span className="text-[10px] text-slate-400 block">F1 Score</span>
+              <span className="text-xl font-bold font-mono text-purple-400 mt-0.5 block">{baseline_model.f1_score.toFixed(3)}</span>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-2.5">
+              <span className="text-[10px] text-slate-400 block">Accuracy</span>
+              <span className="text-xl font-bold font-mono text-white mt-0.5 block">{(baseline_model.accuracy * 100).toFixed(1)}%</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 text-center text-xs">
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-2.5">
+              <span className="text-[10px] text-slate-400 block">Precision</span>
+              <span className="text-lg font-bold font-mono text-sky-400 mt-0.5 block">{(baseline_model.precision * 100).toFixed(1)}%</span>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-2.5">
+              <span className="text-[10px] text-slate-400 block">Recall</span>
+              <span className="text-lg font-bold font-mono text-amber-400 mt-0.5 block">{(baseline_model.recall * 100).toFixed(1)}%</span>
+            </div>
+          </div>
+
+          {/* Confusion Matrix */}
+          <div>
+            <span className="text-xs font-semibold text-slate-300 block mb-1.5">Confusion Matrix (Test Split)</span>
+            <div className="grid grid-cols-2 gap-2 text-center font-mono text-xs">
+              <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
+                TN: <strong className="text-white text-sm">{baseline_model.confusion_matrix.true_negative}</strong>
+                <span className="block text-[10px] text-slate-400">On-Time Correct</span>
+              </div>
+              <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300">
+                FP: <strong className="text-white text-sm">{baseline_model.confusion_matrix.false_positive}</strong>
+                <span className="block text-[10px] text-slate-400">False Alarms</span>
+              </div>
+              <div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300">
+                FN: <strong className="text-white text-sm">{baseline_model.confusion_matrix.false_negative}</strong>
+                <span className="block text-[10px] text-slate-400">Missed Delays</span>
+              </div>
+              <div className="p-2 rounded-lg bg-sky-500/10 border border-sky-500/30 text-sky-300">
+                TP: <strong className="text-white text-sm">{baseline_model.confusion_matrix.true_positive}</strong>
+                <span className="block text-[10px] text-slate-400">Delays Caught</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Row: Confusion Matrix + ROC Curve */}
+      {/* Trade-off Insights & ROC Curve */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Confusion Matrix (5 cols) */}
-        <div className="lg:col-span-5 rounded-2xl border border-[#1a2947] bg-[#0f172a]/90 p-5 backdrop-blur-sm">
-          <div className="border-b border-slate-800 pb-3 mb-4">
+        {/* Precision vs Recall Trade-Off Explanation (5 cols) */}
+        <div className="lg:col-span-5 rounded-2xl border border-[#1a2947] bg-[#0f172a]/90 p-5 backdrop-blur-sm space-y-3">
+          <div className="border-b border-slate-800 pb-2">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Layers className="h-4 w-4 text-sky-400" /> Confusion Matrix (Test Split)
+              <Info className="h-4 w-4 text-sky-400" /> Operational Trade-Off Analysis
             </h3>
-            <p className="text-xs text-slate-400">Ground Truth vs Baseline Classifier Predictions</p>
+            <p className="text-xs text-slate-400">Precision vs Recall in commercial aviation operations</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 text-center text-xs">
-            {/* True Negative */}
-            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3">
-              <span className="text-[10px] uppercase text-emerald-400 font-bold block">True Negative (TN)</span>
-              <span className="text-2xl font-extrabold font-mono text-white mt-1 block">{cm.true_negative}</span>
-              <p className="text-[10px] text-emerald-300 mt-1">Correctly identified on-time</p>
+          <div className="space-y-3 text-xs leading-relaxed text-slate-300">
+            <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/30">
+              <strong className="text-sky-300 block mb-1">Precision Impact:</strong>
+              {tradeoff_explanation.precision_significance}
             </div>
 
-            {/* False Positive */}
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
-              <span className="text-[10px] uppercase text-amber-400 font-bold block">False Positive (FP)</span>
-              <span className="text-2xl font-extrabold font-mono text-white mt-1 block">{cm.false_positive}</span>
-              <p className="text-[10px] text-amber-300 mt-1">False delay alarm</p>
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
+              <strong className="text-amber-300 block mb-1">Recall Impact:</strong>
+              {tradeoff_explanation.recall_significance}
             </div>
 
-            {/* False Negative */}
-            <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3">
-              <span className="text-[10px] uppercase text-rose-400 font-bold block">False Negative (FN)</span>
-              <span className="text-2xl font-extrabold font-mono text-white mt-1 block">{cm.false_negative}</span>
-              <p className="text-[10px] text-rose-300 mt-1">Missed actual delay</p>
+            <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-[11px] text-slate-400">
+              <strong className="text-slate-300 block mb-0.5">Causality Boundary:</strong>
+              {tradeoff_explanation.causality_disclaimer}
             </div>
-
-            {/* True Positive */}
-            <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 p-3">
-              <span className="text-[10px] uppercase text-sky-400 font-bold block">True Positive (TP)</span>
-              <span className="text-2xl font-extrabold font-mono text-white mt-1 block">{cm.true_positive}</span>
-              <p className="text-[10px] text-sky-300 mt-1">Correctly flagged delay</p>
-            </div>
-          </div>
-
-          <div className="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
-            <span>Total Test Samples: {data.test_samples}</span>
-            <span>Balanced Class Weights Applied</span>
           </div>
         </div>
 
@@ -242,19 +320,23 @@ export const ModelEvaluationView: React.FC = () => {
           <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-sky-400" /> Receiver Operating Characteristic (ROC)
+                <TrendingUp className="h-4 w-4 text-sky-400" /> Receiver Operating Characteristic (ROC) Comparison
               </h3>
-              <p className="text-xs text-slate-400">True Positive Rate vs False Positive Rate</p>
+              <p className="text-xs text-slate-400">True Positive Rate vs False Positive Rate across classification thresholds</p>
             </div>
-            <span className="font-mono text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded border border-emerald-500/30">
-              AUC = {classification.roc_auc.toFixed(3)}
-            </span>
+            <div className="flex items-center gap-2 text-xs font-mono font-bold">
+              <span className="text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/30">
+                Candidate: {candidate_model.roc_auc.toFixed(3)}
+              </span>
+              <span className="text-slate-300 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
+                Baseline: {baseline_model.roc_auc.toFixed(3)}
+              </span>
+            </div>
           </div>
 
           {/* SVG ROC Plot */}
           <div className="relative h-56 w-full flex items-center justify-center">
             <svg viewBox="0 0 400 220" className="w-full h-full overflow-visible">
-              {/* Grid Lines */}
               <line x1="40" y1="20" x2="380" y2="20" stroke="#1e293b" strokeDasharray="3 3" />
               <line x1="40" y1="70" x2="380" y2="70" stroke="#1e293b" strokeDasharray="3 3" />
               <line x1="40" y1="120" x2="380" y2="120" stroke="#1e293b" strokeDasharray="3 3" />
@@ -264,16 +346,17 @@ export const ModelEvaluationView: React.FC = () => {
               <line x1="380" y1="20" x2="380" y2="170" stroke="#1e293b" strokeDasharray="3 3" />
               <line x1="40" y1="170" x2="380" y2="170" stroke="#334155" />
 
-              {/* Diagonal No-Skill Reference (40,170) to (380,20) */}
+              {/* Diagonal No-Skill Reference */}
               <line x1="40" y1="170" x2="380" y2="20" stroke="#475569" strokeDasharray="4 4" strokeWidth="1.5" />
 
-              {/* ROC Curve Polyline */}
-              {classification.roc_curve && classification.roc_curve.length > 1 && (
+              {/* Baseline Curve (gray dashed) */}
+              {baseline_model.roc_curve && baseline_model.roc_curve.length > 1 && (
                 <polyline
                   fill="none"
-                  stroke="#38bdf8"
-                  strokeWidth="2.5"
-                  points={classification.roc_curve
+                  stroke="#94a3b8"
+                  strokeWidth="2"
+                  strokeDasharray="3 3"
+                  points={baseline_model.roc_curve
                     .map((pt) => {
                       const x = 40 + pt.fpr * (380 - 40);
                       const y = 170 - pt.tpr * (170 - 20);
@@ -283,7 +366,22 @@ export const ModelEvaluationView: React.FC = () => {
                 />
               )}
 
-              {/* Axis Labels */}
+              {/* Candidate Curve (sky blue solid) */}
+              {candidate_model.roc_curve && candidate_model.roc_curve.length > 1 && (
+                <polyline
+                  fill="none"
+                  stroke="#38bdf8"
+                  strokeWidth="2.5"
+                  points={candidate_model.roc_curve
+                    .map((pt) => {
+                      const x = 40 + pt.fpr * (380 - 40);
+                      const y = 170 - pt.tpr * (170 - 20);
+                      return `${x},${y}`;
+                    })
+                    .join(' ')}
+                />
+              )}
+
               <text x="210" y="200" fill="#94a3b8" fontSize="10" textAnchor="middle" fontFamily="sans-serif">
                 False Positive Rate (1 - Specificity)
               </text>
@@ -295,10 +393,13 @@ export const ModelEvaluationView: React.FC = () => {
 
           <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400">
             <span className="flex items-center gap-1.5">
-              <span className="h-0.5 w-4 bg-sky-400 inline-block" /> Trained Model Baseline
+              <span className="h-0.5 w-4 bg-sky-400 inline-block" /> Candidate: HistGradientBoosting
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="h-0.5 w-4 bg-slate-500 border-dashed inline-block" /> Random Classifier (AUC=0.50)
+              <span className="h-0.5 w-4 bg-slate-400 border-dashed inline-block" /> Baseline: LogisticRegression
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-0.5 w-4 bg-slate-600 border-dotted inline-block" /> Random Chance (AUC=0.50)
             </span>
           </div>
         </div>
@@ -308,31 +409,28 @@ export const ModelEvaluationView: React.FC = () => {
       <div className="rounded-2xl border border-[#1a2947] bg-[#0f172a]/90 p-5 backdrop-blur-sm">
         <div className="border-b border-slate-800 pb-3 mb-4">
           <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <BarChart4 className="h-4 w-4 text-sky-400" /> Relative Feature Importances (Random Forest Gini Impurity)
+            <BarChart4 className="h-4 w-4 text-sky-400" /> Permutation Feature Importances (Holdout Test Set)
           </h3>
           <p className="text-xs text-slate-400">
-            How heavily each category influenced the tree splits in our baseline delay model
+            Empirical drop in model performance when each pre-departure feature is shuffled
           </p>
         </div>
 
         <div className="space-y-3">
-          {feature_importances.map((item) => {
-            const pct = Math.round(item.importance * 100);
-            return (
-              <div key={item.feature} className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-slate-200">{item.feature}</span>
-                  <span className="font-mono text-sky-400 font-bold">{pct}%</span>
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-sky-500 to-blue-600 transition-all duration-500"
-                    style={{ width: `${Math.max(pct, 4)}%` }}
-                  />
-                </div>
+          {feature_importances.map((item) => (
+            <div key={item.feature} className="space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-200">{item.feature}</span>
+                <span className="font-mono text-sky-400 font-bold">{item.percentage}%</span>
               </div>
-            );
-          })}
+              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-sky-500 to-blue-600 transition-all duration-500"
+                  style={{ width: `${Math.max(item.percentage, 4)}%` }}
+                />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
