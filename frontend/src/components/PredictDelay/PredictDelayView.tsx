@@ -597,6 +597,19 @@ export const PredictDelayView: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Advisory Disclaimer Banner */}
+      <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-200 backdrop-blur-sm flex items-start gap-3">
+        <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+        <div className="space-y-1">
+          <span className="font-bold text-amber-300 block uppercase tracking-wide text-[11px]">
+            Aviation Advisory Notice
+          </span>
+          <p className="text-[11px] leading-relaxed text-amber-200/90">
+            Predictions are operational estimates based on available historical BTS flight data, not guaranteed flight outcomes. Actual delays depend on real-time tactical ATC Ground Delay Programs (GDP), live weather events, and equipment turnaround.
+          </p>
+        </div>
+      </div>
     </div>
   );
 };

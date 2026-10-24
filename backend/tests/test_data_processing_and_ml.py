@@ -143,5 +143,68 @@ class DataProcessingAndMLExhaustiveTests(unittest.TestCase):
         self.assertTrue(carriers_data["success"])
         self.assertGreater(len(carriers_data["data"]), 0)
 
+    def test_07_empty_dataset_handling(self):
+        """Verifies pipeline handles completely empty dataframe with headers gracefully."""
+        empty_df = pd.DataFrame(columns=["origin", "dest", "scheduled_dep_time", "arr_delay_minutes"])
+        clean_df, report = self.pipeline.validate_and_clean(empty_df, source_name="Empty Test")
+        self.assertEqual(report["total_input_records"], 0)
+        self.assertEqual(report["valid_records"], 0)
+        self.assertEqual(report["rejected_records"], 0)
+        self.assertEqual(report["acceptance_rate_pct"], 0.0)
+        self.assertTrue(clean_df.empty)
+
+    def test_08_missing_mandatory_columns_error(self):
+        """Verifies pipeline raises ValueError when mandatory schema columns are absent."""
+        corrupted_df = pd.DataFrame([{"random_col_1": 123, "random_col_2": "test"}])
+        with self.assertRaises(ValueError) as ctx:
+            self.pipeline.validate_and_clean(corrupted_df)
+        self.assertIn("Missing mandatory columns", str(ctx.exception))
+
+    def test_09_duplicate_records_detection(self):
+        """Verifies duplicate flight records in the same schedule slot are deduplicated."""
+        dup_data = pd.DataFrame([
+            {
+                "flight_id": "DL999",
+                "flight_date": "2024-06-15",
+                "carrier_code": "DL",
+                "origin": "ATL",
+                "dest": "LAX",
+                "scheduled_dep_time": "14:30",
+                "distance_miles": 1946.0,
+                "arr_delay_minutes": 10.0,
+            },
+            {
+                "flight_id": "DL999",
+                "flight_date": "2024-06-15",
+                "carrier_code": "DL",
+                "origin": "ATL",
+                "dest": "LAX",
+                "scheduled_dep_time": "14:30",
+                "distance_miles": 1946.0,
+                "arr_delay_minutes": 10.0,
+            }
+        ])
+        clean_df, report = self.pipeline.validate_and_clean(dup_data)
+        self.assertEqual(report["total_input_records"], 2)
+        self.assertEqual(report["valid_records"], 1)
+        self.assertEqual(report["rejected_records"], 1)
+        self.assertEqual(report["rejection_breakdown"]["duplicate_flight_record"], 1)
+
+    def test_10_dynamic_delay_threshold_retraining(self):
+        """Verifies model retrains with dynamic delay threshold and updates comparison metadata."""
+        res = self.client.post("/api/model/retrain", json={"delay_threshold_minutes": 30})
+        self.assertEqual(res.status_code, 200)
+        data = json.loads(res.data)
+        self.assertTrue(data["success"])
+        self.assertEqual(data["data"]["delay_threshold_minutes"], 30)
+        self.assertIn("candidate_model", data["data"])
+        self.assertIn("baseline_model", data["data"])
+
+        # Reset back to standard 15 min threshold
+        res_reset = self.client.post("/api/model/retrain", json={"delay_threshold_minutes": 15})
+        self.assertEqual(res_reset.status_code, 200)
+        data_reset = json.loads(res_reset.data)
+        self.assertEqual(data_reset["data"]["delay_threshold_minutes"], 15)
+
 if __name__ == "__main__":
     unittest.main()

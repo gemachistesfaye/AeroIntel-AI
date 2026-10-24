@@ -1,0 +1,22 @@
+{
+  "source_name": "sample_flights.csv",
+  "delay_threshold_minutes": 15,
+  "total_input_records": 1250,
+  "valid_records": 1250,
+  "rejected_records": 0,
+  "acceptance_rate_pct": 100.0,
+  "rejection_breakdown": {
+    "missing_carrier_or_route": 0,
+    "same_origin_and_dest": 0,
+    "invalid_departure_time": 0,
+    "invalid_negative_distance": 0,
+    "missing_delay_ground_truth": 0,
+    "duplicate_flight_record": 0
+  },
+  "clean_features_count": 28,
+  "class_distribution": {
+    "on_time_count": 856,
+    "delayed_count": 394,
+    "delay_rate_pct": 31.5
+  }
+}

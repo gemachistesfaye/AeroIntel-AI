@@ -19,9 +19,9 @@ class FlightDelayExplainer:
     }
 
     CAUSALITY_DISCLAIMER = (
-        "Scientific & Regulatory Notice: Feature attributions indicate statistical associations "
-        "identified by the model within historical BTS flight records. Observational machine learning "
-        "cannot determine independent physical causality."
+        "Scientific & Regulatory Advisory: Predictions are statistical estimates based on available historical "
+        "BTS records, not guaranteed flight outcomes. Feature attributions indicate associative correlation "
+        "identified by the model and do not constitute independent physical causality."
     )
 
     def explain_instance(

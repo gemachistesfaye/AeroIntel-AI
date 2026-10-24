@@ -72,5 +72,37 @@ class AviationApiTestCase(unittest.TestCase):
         self.assertIn("classification", data["data"])
         self.assertIn("accuracy", data["data"]["classification"])
 
+    def test_07_api_validation_errors(self):
+        """Verifies API endpoints return 400 with helpful errors when requests are invalid."""
+        # Empty predict body
+        res = self.client.post("/api/predict/flight", data="", content_type="application/json")
+        self.assertEqual(res.status_code, 400)
+        data = json.loads(res.data)
+        self.assertFalse(data["success"])
+
+        # Upload without file
+        res_upload = self.client.post("/api/data/upload")
+        self.assertEqual(res_upload.status_code, 400)
+        data_upload = json.loads(res_upload.data)
+        self.assertFalse(data_upload["success"])
+
+        # Non-existent file ingestion
+        res_ingest = self.client.post("/api/data/ingest", json={"file_name": "non_existent_file.csv"})
+        self.assertEqual(res_ingest.status_code, 404)
+
+    def test_08_data_management_and_quality(self):
+        """Verifies data status and quality report endpoints."""
+        res_status = self.client.get("/api/data/status")
+        self.assertEqual(res_status.status_code, 200)
+        data_status = json.loads(res_status.data)
+        self.assertTrue(data_status["success"])
+        self.assertIn("total_records", data_status["data"])
+
+        res_quality = self.client.get("/api/data/quality")
+        self.assertEqual(res_quality.status_code, 200)
+        data_quality = json.loads(res_quality.data)
+        self.assertTrue(data_quality["success"])
+        self.assertIn("valid_records", data_quality["data"])
+
 if __name__ == "__main__":
     unittest.main()

@@ -119,24 +119,37 @@ See [docs/DATASET.md](docs/DATASET.md) for full attribution and download instruc
 
 ```powershell
 cd backend
-$env:PYTHONPATH="backend"
+$env:PYTHONPATH="."
 
-# Run data processing, validation, and ML tests (6 tests)
-python tests/test_data_processing_and_ml.py
+# Run entire backend test suite via unittest discovery (19 tests)
+.\.venv\Scripts\python.exe -m unittest discover tests
 
-# Run API endpoint integration tests (6 tests)
-python tests/test_api.py
+# Or run individual test modules:
+.\.venv\Scripts\python.exe tests/test_data_processing_and_ml.py   # 10 tests
+.\.venv\Scripts\python.exe tests/test_api.py                      # 8 tests
+.\.venv\Scripts\python.exe tests/test_e2e_journey.py              # 10-step full workflow
 ```
-Expected output:
+Actual output:
 ```
-Ran 6 tests in 5.694s ... OK
-Ran 6 tests in 0.611s ... OK
+...................
+----------------------------------------------------------------------
+Ran 19 tests in 28.693s
+
+OK
 ```
 
 Verify frontend compilation with zero TypeScript errors:
 ```powershell
 cd frontend
 npm run build
+```
+Actual output:
+```
+✓ 1589 modules transformed.
+dist/index.html                   1.19 kB │ gzip:  0.71 kB
+dist/assets/index-IcoBIIYv.css   31.65 kB │ gzip:  6.13 kB
+dist/assets/index-BNRSnPdH.js   256.44 kB │ gzip: 68.75 kB
+✓ built in 10.13s
 ```
 
 ---

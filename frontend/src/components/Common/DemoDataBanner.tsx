@@ -26,6 +26,9 @@ export const DemoDataBanner: React.FC<DemoDataBannerProps> = ({ sectionTitle }) 
               {sectionTitle ? `${sectionTitle} utilizes ` : 'Operating on '}
               FAA/BTS 1,250 flight historical benchmark records. Live ADS-B radar ingestion and deep temporal LSTM integration are scheduled for Phase 2.
             </p>
+            <p className="mt-0.5 text-[11px] text-slate-400 italic">
+              Advisory: Platform predictions and analytics are statistical estimates based on historical flight data, not guaranteed operational outcomes.
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2 text-xs text-slate-400 shrink-0">

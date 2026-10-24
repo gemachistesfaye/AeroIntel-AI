@@ -22,6 +22,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Ingestion Uploads
+backend/app/data/uploads/*
+!backend/app/data/uploads/.gitkeep
+
 # Environment & IDE
 .env
 .env.local

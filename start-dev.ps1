@@ -11,7 +11,8 @@ Start-Sleep -Seconds 2
 
 # 2. Start Frontend
 Write-Host "[2/2] Starting React Vite Frontend on port 5173..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd frontend; & 'C:\Program Files\nodejs\npm.cmd' run dev"
+$npmCmd = if (Get-Command npm.cmd -ErrorAction SilentlyContinue) { "npm.cmd" } else { "C:\Program Files\nodejs\npm.cmd" }
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd frontend; & '$npmCmd' run dev"
 
 Write-Host "`nPlatform running:" -ForegroundColor Green
 Write-Host "- Frontend UI: http://localhost:5173" -ForegroundColor Green

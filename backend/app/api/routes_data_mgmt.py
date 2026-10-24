@@ -68,7 +68,7 @@ def upload_csv():
             "quality_report": quality_report
         })
     except Exception as e:
-        return jsonify({"success": False, "error": f"Failed to process uploaded file: {str(e)}"}), 500
+        return jsonify({"success": False, "error": f"Failed to process uploaded file: {str(e)}"}), 400
 
 @bp.route("/ingest", methods=["POST"])
 def ingest_dataset():
@@ -86,6 +86,10 @@ def ingest_dataset():
         clean_df, report = ingestion_pipeline.ingest_from_csv(target_path)
         count = data_manager.reload()
 
+        # Refresh analytical cache
+        from app.data.big_data_processor import analytics_processor
+        analytics_processor.load_data(force_reload=True)
+
         return jsonify({
             "success": True,
             "message": f"Successfully ingested {count} clean records into the platform.",
@@ -101,6 +105,10 @@ def regenerate_data():
         generate_sample_dataset()
         clean_df, report = ingestion_pipeline.ingest_from_csv(settings.DATA_PATH)
         count = data_manager.reload()
+
+        # Refresh analytical cache
+        from app.data.big_data_processor import analytics_processor
+        analytics_processor.load_data(force_reload=True)
 
         return jsonify({
             "success": True,
