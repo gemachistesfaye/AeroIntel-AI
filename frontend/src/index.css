@@ -4,15 +4,15 @@
 
 @layer base {
   body {
-    background-color: #090e1a;
-    color: #e2e8f0;
+    background-color: #0b0f19;
+    color: #f1f5f9;
   }
 }
 
 /* Custom scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -21,7 +21,7 @@
 
 ::-webkit-scrollbar-thumb {
   background: #1e293b;
-  border-radius: 3px;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -31,19 +31,31 @@
 /* Radar pulse animation */
 @keyframes radar-pulse {
   0% {
-    transform: scale(0.95);
-    opacity: 0.8;
+    transform: scale(0.96);
+    opacity: 0.9;
   }
   50% {
-    transform: scale(1.05);
-    opacity: 0.4;
+    transform: scale(1.04);
+    opacity: 0.5;
   }
   100% {
-    transform: scale(0.95);
-    opacity: 0.8;
+    transform: scale(0.96);
+    opacity: 0.9;
   }
 }
 
 .radar-pulse {
   animation: radar-pulse 3s infinite ease-in-out;
+}
+
+/* Subtle flight corridor dash animation */
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+.corridor-active {
+  stroke-dasharray: 4, 4;
+  animation: dash-flow 1.5s linear infinite;
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, Clock, Globe, Shield, Terminal } from 'lucide-react';
+import { RefreshCw, Clock, Globe } from 'lucide-react';
 
 interface HeaderProps {
   title: string;
@@ -31,52 +31,47 @@ export const Header: React.FC<HeaderProps> = ({
   }, []);
 
   return (
-    <header className="sticky top-0 z-20 border-b border-[#1a2947] bg-[#0c1324]/90 backdrop-blur-md px-6 py-4">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <header className="sticky top-0 z-20 border-b border-slate-800/80 bg-[#0d1322]/90 backdrop-blur-md px-6 py-3.5">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-sky-400">AeroIntel Ops</span>
-            <span className="text-slate-600">/</span>
-            <span className="text-xs font-medium text-slate-400">{title}</span>
-          </div>
-          <h2 className="text-xl font-bold tracking-tight text-white mt-0.5">{title}</h2>
-          <p className="text-xs text-slate-400">{subtitle}</p>
+          <h2 className="text-lg font-semibold tracking-tight text-white">{title}</h2>
+          <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>
         </div>
 
-        <div className="flex items-center flex-wrap gap-3">
+        <div className="flex items-center flex-wrap gap-2.5">
           {/* Aviation Clocks */}
-          <div className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/80 px-3.5 py-1.5 font-mono text-xs shadow-inner">
-            <div className="flex items-center gap-1.5 text-sky-300">
-              <Globe className="h-3.5 w-3.5 text-sky-400" />
+          <div className="flex items-center gap-2.5 rounded-lg border border-slate-800 bg-slate-900/80 px-3 py-1 font-mono text-xs">
+            <div className="flex items-center gap-1.5 text-sky-400">
+              <Globe className="h-3 w-3" />
               <span>{utcTime || '00:00:00 UTC'}</span>
             </div>
-            <div className="h-3 w-px bg-slate-700" />
-            <div className="flex items-center gap-1.5 text-slate-300">
-              <Clock className="h-3.5 w-3.5 text-slate-400" />
-              <span>{localTime || '00:00:00 Local'}</span>
+            <div className="h-3 w-px bg-slate-800" />
+            <div className="flex items-center gap-1.5 text-slate-400">
+              <Clock className="h-3 w-3" />
+              <span>{localTime || '00:00:00'}</span>
             </div>
           </div>
 
           {/* Backend Status indicator */}
           <div
-            className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-medium ${
+            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium ${
               isBackendConnected
-                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-                : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                : 'border-slate-800 bg-slate-900 text-slate-400'
             }`}
           >
-            <span className={`h-2 w-2 rounded-full ${isBackendConnected ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
-            <span>{isBackendConnected ? 'Flask API Online' : 'API Connecting...'}</span>
+            <span className={`h-1.5 w-1.5 rounded-full ${isBackendConnected ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+            <span>{isBackendConnected ? 'Flask API Online' : 'Offline Demo Mode'}</span>
           </div>
 
           {/* Refresh Action */}
           <button
             onClick={onRefresh}
             disabled={isRefreshing}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-3.5 py-1.5 text-xs font-semibold text-slate-200 transition-all hover:bg-slate-700 hover:text-white disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900/80 px-2.5 py-1 text-xs text-slate-300 transition-colors hover:bg-slate-800 hover:text-white disabled:opacity-50"
             title="Refresh active metrics"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin text-sky-400' : 'text-slate-400'}`} />
+            <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin text-sky-400' : 'text-slate-400'}`} />
             <span>Refresh</span>
           </button>
         </div>

@@ -29,13 +29,13 @@ export const App: React.FC = () => {
     setIsRefreshing(true);
     try {
       const health = await aviationApi.getHealth();
-      setIsBackendConnected(health.status === 'healthy');
+      setIsBackendConnected(health.status === 'healthy' && !health.is_mock);
 
       // Load dashboard summary
       const summary = await aviationApi.getDashboardSummary();
       setDashboardData(summary);
     } catch (err) {
-      console.warn('Backend currently unreachable or booting, running in resilient mode:', err);
+      console.warn('Backend running in offline resilient mode:', err);
       setIsBackendConnected(false);
     } finally {
       setIsRefreshing(false);
@@ -48,7 +48,7 @@ export const App: React.FC = () => {
     const interval = setInterval(async () => {
       try {
         const health = await aviationApi.getHealth();
-        setIsBackendConnected(health.status === 'healthy');
+        setIsBackendConnected(health.status === 'healthy' && !health.is_mock);
       } catch {
         setIsBackendConnected(false);
       }
@@ -65,33 +65,33 @@ export const App: React.FC = () => {
     switch (activeTab) {
       case 'dashboard':
         return {
-          title: 'Operations Dashboard',
-          subtitle: 'Fleet-wide delay indicators, disruption tracking, and carrier punctuality',
+          title: 'Operations Overview',
+          subtitle: 'Fleet delay indicators, disruption tracking, and carrier punctuality',
         };
       case 'flight-analysis':
         return {
-          title: 'Flight Analysis & Log',
+          title: 'Flights & Telemetry',
           subtitle: 'Searchable log of monitored flight telemetries, turnarounds, and root causes',
         };
       case 'predict-delay':
         return {
-          title: 'AI Delay Prediction Engine',
-          subtitle: 'Operational flight simulator running real Scikit-Learn baseline inference',
+          title: 'Delay Predictor',
+          subtitle: 'Pre-departure flight delay simulator with Scikit-Learn weights',
         };
       case 'route-intelligence':
         return {
-          title: 'Route & Hub Intelligence',
+          title: 'Routes & Air Corridors',
           subtitle: 'Air corridor performance metrics, congestion ratings, and hub choke points',
         };
       case 'model-evaluation':
         return {
-          title: 'Model Evaluation & Transparency',
-          subtitle: 'Honest Scikit-Learn scorecard, confusion matrix, and feature importances',
+          title: 'Model Performance',
+          subtitle: 'Verified Scikit-Learn scorecards, confusion matrices, and feature importances',
         };
       case 'data-management':
         return {
-          title: 'Data Management & Ingestion',
-          subtitle: 'FAA benchmark schema inspection, data health audits, and synthetic controls',
+          title: 'Data & Ingestion',
+          subtitle: 'BTS TranStats schema inspection, CSV uploads, and quality audits',
         };
     }
   };
@@ -99,7 +99,7 @@ export const App: React.FC = () => {
   const headerMeta = getHeaderMeta();
 
   return (
-    <div className="flex min-h-screen bg-[#090e1a] text-slate-100">
+    <div className="flex min-h-screen bg-[#0b0f19] text-slate-100">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <Sidebar
@@ -115,7 +115,7 @@ export const App: React.FC = () => {
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 flex lg:hidden bg-black/80 backdrop-blur-sm">
-          <div className="relative w-72 bg-[#0c1324] h-full">
+          <div className="relative w-64 bg-[#0d1322] h-full">
             <button
               onClick={() => setMobileMenuOpen(false)}
               className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white"
@@ -138,15 +138,15 @@ export const App: React.FC = () => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Mobile Header Bar */}
-        <div className="lg:hidden flex items-center justify-between border-b border-[#1a2947] bg-[#0c1324] px-4 py-3">
+        <div className="lg:hidden flex items-center justify-between border-b border-slate-800 bg-[#0d1322] px-4 py-3">
           <button
             onClick={() => setMobileMenuOpen(true)}
             className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-5 w-5" />
           </button>
-          <span className="font-bold text-sm tracking-tight text-white">AeroIntel AI</span>
-          <div className={`h-2.5 w-2.5 rounded-full ${isBackendConnected ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+          <span className="font-semibold text-sm tracking-tight text-white">AeroIntel</span>
+          <div className={`h-2 w-2 rounded-full ${isBackendConnected ? 'bg-emerald-400' : 'bg-amber-400'}`} />
         </div>
 
         <Header
@@ -157,7 +157,7 @@ export const App: React.FC = () => {
           isBackendConnected={isBackendConnected}
         />
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-5 lg:p-6 max-w-7xl w-full mx-auto">
           {activeTab === 'dashboard' && (
             <DashboardView
               data={dashboardData}

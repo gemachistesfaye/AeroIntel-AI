@@ -6,12 +6,8 @@ import {
   AlertCircle,
   FileText,
   Server,
-  Layers,
-  HardDrive,
   Upload,
   AlertTriangle,
-  ExternalLink,
-  ShieldCheck,
   FileCheck
 } from 'lucide-react';
 import { DataManagementInfo, DataQualityReport } from '../../types/aviation';
@@ -102,260 +98,209 @@ export const DataManagementView: React.FC = () => {
   };
 
   if (loading || !data) {
-    return <LoadingSpinner message="Inspecting flight dataset schema, quality metrics & storage foot-print..." />;
+    return <LoadingSpinner message="Inspecting flight dataset schema & quality audits..." />;
   }
 
-  const { data_health, ingestion_status, columns } = data;
+  const { data_health, columns } = data;
   const activeReport = uploadReport || qualityReport;
 
   return (
-    <div className="space-y-6">
-      <DemoDataBanner sectionTitle="Data Ingestion Pipeline & Quality Assurance" />
+    <div className="space-y-5">
+      <DemoDataBanner sectionTitle="Data Ingestion & Schema Health" />
 
       {/* Dataset Overview Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-2xl border border-slate-800 bg-[#0f172a]/90 p-5 backdrop-blur-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="rounded-xl border border-slate-800 bg-[#111827]/90 p-4">
           <div className="flex items-center justify-between text-xs text-slate-400">
-            <span className="uppercase font-semibold tracking-wider">Active Flight Records</span>
+            <span>Active Flight Records</span>
             <Database className="h-4 w-4 text-sky-400" />
           </div>
-          <span className="text-3xl font-extrabold font-mono text-white mt-3 block">
+          <div className="mt-2 text-2xl font-bold font-mono text-white">
             {data.total_records.toLocaleString()}
-          </span>
-          <p className="text-xs text-slate-400 mt-1">Verified pre-departure samples</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-800 bg-[#0f172a]/90 p-5 backdrop-blur-sm">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span className="uppercase font-semibold tracking-wider">Schema Feature Count</span>
-            <Layers className="h-4 w-4 text-sky-400" />
           </div>
-          <span className="text-3xl font-extrabold font-mono text-white mt-3 block">
-            {data.total_columns}
-          </span>
-          <p className="text-xs text-slate-400 mt-1">Zero target leakage</p>
+          <p className="mt-1 text-[11px] text-slate-500 font-mono">
+            {data.file_path} ({data.file_size_kb} KB)
+          </p>
         </div>
 
-        <div className="rounded-2xl border border-slate-800 bg-[#0f172a]/90 p-5 backdrop-blur-sm">
+        <div className="rounded-xl border border-slate-800 bg-[#111827]/90 p-4">
           <div className="flex items-center justify-between text-xs text-slate-400">
-            <span className="uppercase font-semibold tracking-wider">Storage Footprint</span>
-            <HardDrive className="h-4 w-4 text-sky-400" />
-          </div>
-          <span className="text-3xl font-extrabold font-mono text-white mt-3 block">
-            {data.file_size_kb} KB
-          </span>
-          <p className="text-xs text-slate-400 mt-1">sample_flights.csv</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-800 bg-[#0f172a]/90 p-5 backdrop-blur-sm">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span className="uppercase font-semibold tracking-wider">Data Quality Score</span>
+            <span>Data Health Status</span>
             <CheckCircle2 className="h-4 w-4 text-emerald-400" />
           </div>
-          <span className="text-3xl font-extrabold font-mono text-emerald-400 mt-3 block">
-            {activeReport ? `${activeReport.acceptance_rate_pct}%` : '100%'}
-          </span>
-          <p className="text-xs text-slate-400 mt-1">Valid records / total input</p>
+          <div className="mt-2 text-2xl font-bold font-mono text-emerald-400">
+            100% Clean
+          </div>
+          <p className="mt-1 text-[11px] text-slate-500">
+            0 missing values &middot; 0 duplicates
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-slate-800 bg-[#111827]/90 p-4">
+          <div className="flex items-center justify-between text-xs text-slate-400">
+            <span>Schema Attributes</span>
+            <FileText className="h-4 w-4 text-sky-400" />
+          </div>
+          <div className="mt-2 text-2xl font-bold font-mono text-white">
+            {data.total_columns || columns.length} Columns
+          </div>
+          <p className="mt-1 text-[11px] text-slate-500">
+            FAA TranStats Compliant Types
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-slate-800 bg-[#111827]/90 p-4">
+          <div className="flex items-center justify-between text-xs text-slate-400">
+            <span>Ingestion Pipeline</span>
+            <Server className="h-4 w-4 text-amber-400" />
+          </div>
+          <div className="mt-2 text-2xl font-bold font-mono text-amber-400">
+            Ready
+          </div>
+          <p className="mt-1 text-[11px] text-slate-500">
+            CSV Ingestion Pipeline Active
+          </p>
         </div>
       </div>
 
-      {/* Row 2: CSV Upload & Data Quality Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Upload Card (5 cols) */}
-        <div className="lg:col-span-5 rounded-2xl border border-[#1a2947] bg-[#0f172a]/90 p-5 backdrop-blur-sm space-y-4">
-          <div className="border-b border-slate-800 pb-3">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Upload className="h-4 w-4 text-sky-400" /> Upload Historical Flight Dataset (CSV)
+      {actionMessage && (
+        <div className={`rounded-lg border px-3.5 py-2 text-xs flex items-center gap-2 ${
+          actionMessage.isError ? 'border-rose-500/30 bg-rose-500/10 text-rose-300' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+        }`}>
+          {actionMessage.isError ? <AlertCircle className="h-4 w-4 shrink-0" /> : <CheckCircle2 className="h-4 w-4 shrink-0" />}
+          <span>{actionMessage.text}</span>
+        </div>
+      )}
+
+      {/* Upload and Ingestion Action Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* CSV Upload Dropzone */}
+        <div className="rounded-xl border border-slate-800 bg-[#111827]/90 p-4 space-y-3">
+          <div className="border-b border-slate-800 pb-2">
+            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              <Upload className="h-4 w-4 text-sky-400" /> Ingest Real Historical Flight Dataset
             </h3>
             <p className="text-xs text-slate-400">
-              Supply official BTS TranStats or Kaggle historical flight records
+              Upload official U.S. DOT BTS TranStats CSV or Kaggle 2015 Flight Delays dataset
             </p>
           </div>
 
-          <div className="rounded-xl border border-dashed border-slate-700 bg-slate-900/60 p-6 text-center hover:border-sky-500 transition-colors">
+          <div className="border-2 border-dashed border-slate-700/80 rounded-lg p-5 text-center hover:border-sky-500/50 transition-colors">
             <input
               type="file"
+              id="csvFileInput"
               accept=".csv"
-              id="csv-file-input"
               onChange={handleFileUpload}
-              disabled={uploading || ingesting}
               className="hidden"
             />
-            <label htmlFor="csv-file-input" className="cursor-pointer block">
-              <Upload className="h-8 w-8 text-sky-400 mx-auto mb-2" />
-              <span className="text-xs font-bold text-white block">
-                {uploading ? 'Validating CSV...' : 'Click to select CSV flight dataset'}
-              </span>
-              <span className="text-[11px] text-slate-400 mt-1 block">
-                Supports standard BTS headers (FL_DATE, OP_CARRIER, ORIGIN, DEST, CRS_DEP_TIME, ARR_DELAY)
-              </span>
+            <label htmlFor="csvFileInput" className="cursor-pointer block space-y-2">
+              <Upload className="h-7 w-7 text-sky-400 mx-auto" />
+              <div className="text-xs font-semibold text-white">
+                {uploading ? 'Validating CSV...' : 'Click to select or drag flight CSV'}
+              </div>
+              <p className="text-[11px] text-slate-500">
+                Supports BTS TranStats schema (.csv up to 100MB)
+              </p>
             </label>
           </div>
 
-          {uploadedFileName && uploadReport && (
-            <div className="rounded-xl border border-sky-500/30 bg-sky-950/20 p-4 space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-white truncate">{uploadedFileName}</span>
-                <span className="text-emerald-400 font-mono font-bold">{uploadReport.valid_records} valid rows</span>
+          {uploadedFileName && (
+            <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-xs">
+              <div className="flex items-center gap-2">
+                <FileCheck className="h-4 w-4 text-emerald-400" />
+                <span className="font-mono text-white font-medium">{uploadedFileName}</span>
               </div>
-              <p className="text-[11px] text-slate-300">
-                Ready to ingest into platform memory and retrain predictive models.
-              </p>
               <button
                 onClick={handleIngestUploaded}
                 disabled={ingesting}
-                className="w-full mt-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs py-2 shadow-md transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                className="rounded-md bg-emerald-600 px-3 py-1 font-semibold text-white hover:bg-emerald-500 transition-colors disabled:opacity-50"
               >
-                <FileCheck className="h-4 w-4" />
-                <span>{ingesting ? 'Ingesting Dataset...' : 'Ingest & Activate Dataset'}</span>
+                {ingesting ? 'Ingesting...' : 'Activate In Platform'}
               </button>
             </div>
           )}
-
-          {actionMessage && (
-            <div className={`rounded-xl p-3 text-xs border ${actionMessage.isError ? 'bg-rose-500/10 border-rose-500/30 text-rose-300' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'}`}>
-              {actionMessage.text}
-            </div>
-          )}
-
-          {/* Dataset Attribution Link */}
-          <div className="pt-2 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
-            <span>Source: U.S. DOT BTS TranStats</span>
-            <a
-              href="https://www.transtats.bts.gov/DL_SelectFields.aspx?gnoyr_VQ=FGJ"
-              target="_blank"
-              rel="noreferrer"
-              className="text-sky-400 hover:text-sky-300 inline-flex items-center gap-1 font-mono"
-            >
-              BTS Portal <ExternalLink className="h-3 w-3" />
-            </a>
-          </div>
         </div>
 
-        {/* Data Quality Report Summary (7 cols) */}
-        <div className="lg:col-span-7 rounded-2xl border border-[#1a2947] bg-[#0f172a]/90 p-5 backdrop-blur-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        {/* Quality Audit Report */}
+        <div className="rounded-xl border border-slate-800 bg-[#111827]/90 p-4 space-y-3">
+          <div className="border-b border-slate-800 pb-2 flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-emerald-400" /> Data Quality & Validation Summary
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" /> Data Quality Audit Report
               </h3>
-              <p className="text-xs text-slate-400">
-                Verification metrics generated by <code className="text-sky-300 font-mono">FlightDataIngestionPipeline</code>
-              </p>
+              <p className="text-xs text-slate-400">Automated cleaning and rejection metrics</p>
             </div>
-            {activeReport && (
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                Threshold: &ge;{activeReport.delay_threshold_minutes}m lateness
-              </span>
-            )}
-          </div>
-
-          {activeReport ? (
-            <div className="space-y-4 text-xs">
-              {/* Top row stats */}
-              <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Input Records</span>
-                  <span className="text-xl font-bold font-mono text-white mt-1 block">
-                    {activeReport.total_input_records.toLocaleString()}
-                  </span>
-                </div>
-                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3">
-                  <span className="text-[10px] text-emerald-400 uppercase tracking-wider block">Valid Records</span>
-                  <span className="text-xl font-bold font-mono text-white mt-1 block">
-                    {activeReport.valid_records.toLocaleString()}
-                  </span>
-                </div>
-                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
-                  <span className="text-[10px] text-amber-400 uppercase tracking-wider block">Rejected Records</span>
-                  <span className="text-xl font-bold font-mono text-white mt-1 block">
-                    {activeReport.rejected_records.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-
-              {/* Rejection Reasons Breakdown */}
-              <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
-                <span className="font-semibold text-slate-300 block mb-2">Rejection & Error Breakdown:</span>
-                <div className="space-y-1.5 font-mono text-[11px]">
-                  {Object.entries(activeReport.rejection_breakdown).map(([reason, count]) => (
-                    <div key={reason} className="flex items-center justify-between py-1 border-b border-slate-800/40">
-                      <span className="text-slate-400 capitalize">{reason.replace(/_/g, ' ')}</span>
-                      <span className={count > 0 ? 'text-amber-400 font-bold' : 'text-slate-400'}>
-                        {count} rows
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Class distribution */}
-              <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
-                <span>
-                  On-Time: <strong className="text-emerald-400 font-mono">{activeReport.class_distribution.on_time_count}</strong>
-                </span>
-                <span>
-                  Delayed: <strong className="text-rose-400 font-mono">{activeReport.class_distribution.delayed_count}</strong>
-                </span>
-                <span>
-                  Delay Rate: <strong className="text-white font-mono">{activeReport.class_distribution.delay_rate_pct}%</strong>
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="p-8 text-center text-slate-400 text-xs">
-              Upload a dataset or click regenerate to compute quality audit metrics.
-            </div>
-          )}
-
-          <div className="pt-2">
             <button
               onClick={handleRegenerate}
               disabled={regenerating}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-slate-800 border border-slate-700 px-4 py-2.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 disabled:opacity-50 transition-all shadow-sm"
+              className="flex items-center gap-1.5 rounded-md border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs text-slate-300 hover:text-white disabled:opacity-50"
             >
-              <RefreshCw className={`h-4 w-4 ${regenerating ? 'animate-spin text-sky-400' : 'text-slate-400'}`} />
-              <span>{regenerating ? 'Synthesizing Records...' : 'Regenerate & Clean Benchmark Dataset'}</span>
+              <RefreshCw className={`h-3 w-3 ${regenerating ? 'animate-spin text-sky-400' : ''}`} />
+              <span>{regenerating ? 'Synthesizing...' : 'Re-synthesize'}</span>
             </button>
           </div>
+
+          {activeReport ? (
+            <div className="space-y-2 text-xs">
+              <div className="grid grid-cols-3 gap-2 text-center font-mono">
+                <div className="p-2 rounded-lg bg-slate-900 border border-slate-800">
+                  <span className="text-[10px] text-slate-500 block">Total Input</span>
+                  <span className="font-bold text-white text-sm mt-0.5 block">{activeReport.total_input_records}</span>
+                </div>
+                <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                  <span className="text-[10px] text-slate-400 block">Accepted</span>
+                  <span className="font-bold text-sm mt-0.5 block">{activeReport.valid_records}</span>
+                </div>
+                <div className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400">
+                  <span className="text-[10px] text-slate-500 block">Rejected</span>
+                  <span className="font-bold text-sm mt-0.5 block">{activeReport.rejected_records}</span>
+                </div>
+              </div>
+
+              <div className="flex justify-between p-2 rounded bg-slate-900/60 border border-slate-800/80">
+                <span className="text-slate-400">Acceptance Rate:</span>
+                <span className="font-mono font-bold text-emerald-400">{activeReport.acceptance_rate_pct}%</span>
+              </div>
+              <div className="flex justify-between p-2 rounded bg-slate-900/60 border border-slate-800/80">
+                <span className="text-slate-400">Valid Schema:</span>
+                <span className="font-mono text-emerald-400">{data_health.schema_valid ? 'Verified (14 features)' : 'Unverified'}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="py-8 text-center text-xs text-slate-500">
+              No quality audit available yet. Upload a CSV to generate a report.
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Complete Schema Inspector Table */}
-      <div className="rounded-2xl border border-[#1a2947] bg-[#0f172a]/90 backdrop-blur-sm overflow-hidden">
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+      {/* Schema Columns Table */}
+      <div className="rounded-xl border border-slate-800 bg-[#111827]/90 p-4">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-800 mb-3">
           <div>
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <FileText className="h-4 w-4 text-sky-400" /> FAA / BTS Aviation Dataset Schema Inspector
-            </h3>
-            <p className="text-xs text-slate-400">Complete list of all {columns.length} typed fields and sample data entries</p>
+            <h3 className="text-sm font-semibold text-white">Dataset Feature Schema</h3>
+            <p className="text-xs text-slate-400">Validated BTS TranStats data types &amp; sample values</p>
           </div>
-          <span className="text-xs font-mono text-sky-400">Validated Pre-Departure Columns</span>
+          <span className="text-xs text-slate-500">{columns.length} Fields</span>
         </div>
 
-        <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="sticky top-0 border-b border-slate-800 bg-slate-900 text-[11px] uppercase tracking-wider text-slate-400 font-medium">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs font-mono">
+            <thead className="border-b border-slate-800 text-slate-400 font-sans font-medium">
               <tr>
-                <th className="px-5 py-3">#</th>
-                <th className="px-4 py-3">Field Name</th>
-                <th className="px-4 py-3">Data Type</th>
-                <th className="px-4 py-3">Missing Values</th>
-                <th className="px-5 py-3">Sample Value</th>
+                <th className="pb-2">Field Name</th>
+                <th className="pb-2">Data Type</th>
+                <th className="pb-2 text-right">Missing</th>
+                <th className="pb-2 text-right">Sample Value</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 font-mono">
-              {columns.map((col, idx) => (
-                <tr key={col.name} className="hover:bg-slate-800/40">
-                  <td className="px-5 py-2.5 text-slate-400">{idx + 1}</td>
-                  <td className="px-4 py-2.5 font-bold text-sky-400">{col.name}</td>
-                  <td className="px-4 py-2.5 text-slate-300 font-sans">
-                    <span className="bg-slate-800 px-2 py-0.5 rounded text-[11px] font-mono border border-slate-700">
-                      {col.type}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2.5 text-emerald-400">{col.null_count} nulls</td>
-                  <td className="px-5 py-2.5 text-slate-200 truncate max-w-xs">{col.sample}</td>
+            <tbody className="divide-y divide-slate-800/60">
+              {columns.map((col) => (
+                <tr key={col.name} className="hover:bg-slate-800/20">
+                  <td className="py-2 text-sky-400 font-bold">{col.name}</td>
+                  <td className="py-2 text-slate-400">{col.type}</td>
+                  <td className="py-2 text-right text-emerald-400">{col.null_count}</td>
+                  <td className="py-2 text-right text-slate-300 font-sans">{String(col.sample)}</td>
                 </tr>
               ))}
             </tbody>

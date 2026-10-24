@@ -1,18 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
   Search,
-  Filter,
-  Plane,
   ChevronLeft,
   ChevronRight,
-  Wind,
-  CloudRain,
   Eye,
-  Clock,
-  Compass,
-  Building,
   AlertCircle,
-  X
+  X,
+  Plane
 } from 'lucide-react';
 import { Flight, FlightQueryParams, RiskTier } from '../../types/aviation';
 import { aviationApi } from '../../services/api';
@@ -76,7 +70,6 @@ export const FlightAnalysisView: React.FC<FlightAnalysisViewProps> = ({
     fetchFlights();
   }, [page, carrierFilter, riskFilter, statusFilter]);
 
-  // Debounced or enter search
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
@@ -93,46 +86,30 @@ export const FlightAnalysisView: React.FC<FlightAnalysisViewProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      <DemoDataBanner sectionTitle="Flight Operations & Analysis" />
+    <div className="space-y-5">
+      <DemoDataBanner sectionTitle="Flight Schedule Log & Telemetry" />
 
       {/* Filter and Search Bar */}
-      <div className="rounded-2xl border border-[#1a2947] bg-[#0f172a]/90 p-5 backdrop-blur-sm">
-        <form onSubmit={handleSearchSubmit} className="flex flex-col md:flex-row items-center gap-3">
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+      <div className="rounded-xl border border-slate-800 bg-[#111827]/90 p-4">
+        <form onSubmit={handleSearchSubmit} className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+          {/* Search Input */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
             <input
               type="text"
-              placeholder="Search by flight number (e.g. DL1042), carrier, origin, or destination..."
+              placeholder="Search by flight number (e.g. DL-1432), origin, or destination..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-900/90 pl-10 pr-4 py-2 text-xs text-white placeholder-slate-400 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono"
+              className="w-full rounded-lg border border-slate-700 bg-slate-900 pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
             />
           </div>
 
-          <div className="flex items-center flex-wrap gap-2 w-full md:w-auto">
-            {/* Status Filter */}
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setPage(1);
-              }}
-              className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-300 focus:border-sky-500 focus:outline-none"
-            >
-              <option value="">All Statuses</option>
-              <option value="ontime">On-Time Only (&lt;15m)</option>
-              <option value="delayed">Delayed Only (&ge;15m)</option>
-            </select>
-
-            {/* Carrier Filter */}
+          {/* Filter Dropdowns */}
+          <div className="flex flex-wrap items-center gap-2">
             <select
               value={carrierFilter}
-              onChange={(e) => {
-                setCarrierFilter(e.target.value);
-                setPage(1);
-              }}
-              className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-300 focus:border-sky-500 focus:outline-none"
+              onChange={(e) => { setCarrierFilter(e.target.value); setPage(1); }}
+              className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
             >
               <option value="">All Carriers</option>
               <option value="DL">Delta (DL)</option>
@@ -143,14 +120,20 @@ export const FlightAnalysisView: React.FC<FlightAnalysisViewProps> = ({
               <option value="AS">Alaska (AS)</option>
             </select>
 
-            {/* Risk Tier Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+              className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
+            >
+              <option value="">All Statuses</option>
+              <option value="ontime">On-Time (&lt;15m)</option>
+              <option value="delayed">Delayed (&ge;15m)</option>
+            </select>
+
             <select
               value={riskFilter}
-              onChange={(e) => {
-                setRiskFilter(e.target.value);
-                setPage(1);
-              }}
-              className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-300 focus:border-sky-500 focus:outline-none"
+              onChange={(e) => { setRiskFilter(e.target.value); setPage(1); }}
+              className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
             >
               <option value="">All Risk Tiers</option>
               <option value="Low">Low Risk</option>
@@ -161,7 +144,7 @@ export const FlightAnalysisView: React.FC<FlightAnalysisViewProps> = ({
 
             <button
               type="submit"
-              className="rounded-xl bg-sky-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-sky-500 transition-colors"
+              className="rounded-lg bg-sky-500 px-3 py-2 text-xs font-semibold text-white hover:bg-sky-400 transition-colors"
             >
               Apply Filter
             </button>
@@ -170,7 +153,7 @@ export const FlightAnalysisView: React.FC<FlightAnalysisViewProps> = ({
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs text-slate-300 hover:text-white"
+                className="rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-2 text-xs text-slate-300 hover:text-white"
               >
                 Reset
               </button>
@@ -181,14 +164,14 @@ export const FlightAnalysisView: React.FC<FlightAnalysisViewProps> = ({
         <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
           <div>
             Showing <span className="font-semibold text-white font-mono">{flights.length}</span> of{' '}
-            <span className="font-semibold text-white font-mono">{total}</span> matching flight records
+            <span className="font-semibold text-white font-mono">{total}</span> matching flights
           </div>
-          <div className="text-[11px] font-mono text-sky-400">FAA 15-Minute Lateness Threshold</div>
+          <div className="text-[11px] font-mono text-slate-500">Threshold: &ge; 15 min lateness</div>
         </div>
       </div>
 
       {/* Flight Records Table */}
-      <div className="rounded-2xl border border-[#1a2947] bg-[#0f172a]/90 backdrop-blur-sm overflow-hidden">
+      <div className="rounded-xl border border-slate-800 bg-[#111827]/90 overflow-hidden">
         {loading ? (
           <LoadingSpinner message="Filtering flight records..." />
         ) : flights.length === 0 ? (
@@ -200,16 +183,16 @@ export const FlightAnalysisView: React.FC<FlightAnalysisViewProps> = ({
             <table className="w-full text-left text-xs">
               <thead className="border-b border-slate-800 bg-slate-900/60 text-[11px] uppercase tracking-wider text-slate-400 font-medium">
                 <tr>
-                  <th className="px-5 py-3.5">Flight ID</th>
-                  <th className="px-4 py-3.5">Carrier</th>
-                  <th className="px-4 py-3.5">Route</th>
-                  <th className="px-4 py-3.5">Scheduled</th>
-                  <th className="px-4 py-3.5">Weather & Wind</th>
-                  <th className="px-4 py-3.5">Taxi-Out</th>
-                  <th className="px-4 py-3.5">Arrival Delay</th>
-                  <th className="px-4 py-3.5">Delay Reason</th>
-                  <th className="px-4 py-3.5">Risk Tier</th>
-                  <th className="px-4 py-3.5 text-right">Telemetry</th>
+                  <th className="px-4 py-3">Flight ID</th>
+                  <th className="px-3 py-3">Carrier</th>
+                  <th className="px-3 py-3">Route</th>
+                  <th className="px-3 py-3">Departure</th>
+                  <th className="px-3 py-3">Surface Weather</th>
+                  <th className="px-3 py-3">Taxi-Out</th>
+                  <th className="px-3 py-3">Arrival Delay</th>
+                  <th className="px-3 py-3">Delay Cause</th>
+                  <th className="px-3 py-3">Risk Tier</th>
+                  <th className="px-4 py-3 text-right">Inspect</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 font-mono">
@@ -219,48 +202,49 @@ export const FlightAnalysisView: React.FC<FlightAnalysisViewProps> = ({
                     <tr
                       key={f.flight_id}
                       onClick={() => setSelectedFlight(f)}
-                      className="hover:bg-sky-500/5 cursor-pointer transition-colors group"
+                      className="hover:bg-slate-800/30 cursor-pointer transition-colors group"
                     >
-                      <td className="px-5 py-3.5 font-bold text-sky-400 group-hover:text-sky-300">
+                      <td className="px-4 py-3 font-bold text-sky-400 group-hover:text-sky-300">
                         {f.flight_id}
                       </td>
-                      <td className="px-4 py-3.5 font-sans">
+                      <td className="px-3 py-3 font-sans">
                         <span className="inline-flex items-center gap-1.5 font-medium text-slate-300">
-                          <span className="font-mono text-[10px] font-bold text-slate-400 bg-slate-800 px-1 py-0.5 rounded">
+                          <span className="font-mono text-[10px] font-bold text-slate-400 bg-slate-800 px-1 py-0.5 rounded border border-slate-700">
                             {f.carrier_code}
                           </span>
                           {f.carrier_name}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-slate-200">
+                      <td className="px-3 py-3 text-slate-200">
                         <span className="font-bold text-white">{f.origin}</span> &rarr;{' '}
                         <span className="font-bold text-white">{f.dest}</span>
-                        <span className="text-[10px] text-slate-400 block font-normal font-sans">
-                          {f.distance_miles} mi ({f.air_time_minutes} min)
+                        <span className="text-[10px] text-slate-500 block font-normal font-sans">
+                          {f.distance_miles} mi
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-slate-300">{f.scheduled_dep_time}</td>
-                      <td className="px-4 py-3.5 font-sans">
-                        <div className="flex items-center gap-1.5 text-slate-300">
-                          <span>{f.origin_weather}</span>
-                        </div>
-                        <span className="text-[10px] text-slate-400 font-mono">
+                      <td className="px-3 py-3 text-slate-300">{f.scheduled_dep_time}</td>
+                      <td className="px-3 py-3 font-sans">
+                        <span className="text-slate-300">{f.origin_weather}</span>
+                        <span className="text-[10px] text-slate-500 font-mono block">
                           {f.wind_speed_knots} kts wind
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-slate-300">{f.taxi_out_minutes} min</td>
-                      <td className="px-4 py-3.5 font-bold">
+                      <td className="px-3 py-3 text-slate-300">{f.taxi_out_minutes} min</td>
+                      <td className="px-3 py-3 font-bold">
                         <span className={isDelayed ? 'text-rose-400' : 'text-emerald-400'}>
-                          {f.arr_delay_minutes > 0 ? `+${f.arr_delay_minutes} min` : `${f.arr_delay_minutes} min`}
+                          {f.arr_delay_minutes > 0 ? `+${f.arr_delay_minutes}m` : `${f.arr_delay_minutes}m`}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 font-sans text-slate-300">{f.delay_cause}</td>
-                      <td className="px-4 py-3.5 font-sans">
+                      <td className="px-3 py-3 font-sans text-slate-400">{f.delay_cause}</td>
+                      <td className="px-3 py-3 font-sans">
                         <RiskBadge tier={f.delay_risk_tier} />
                       </td>
-                      <td className="px-4 py-3.5 text-right font-sans">
-                        <button className="text-xs text-sky-400 hover:text-sky-300 underline underline-offset-2">
-                          View
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          type="button"
+                          className="rounded p-1 text-slate-500 hover:bg-slate-800 hover:text-sky-400 transition-colors"
+                        >
+                          <Eye className="h-4 w-4" />
                         </button>
                       </td>
                     </tr>
@@ -271,53 +255,44 @@ export const FlightAnalysisView: React.FC<FlightAnalysisViewProps> = ({
           </div>
         )}
 
-        {/* Pagination Footer */}
-        <div className="flex items-center justify-between border-t border-slate-800 px-5 py-3 text-xs text-slate-400">
-          <div>
-            Page <span className="font-bold text-white font-mono">{page}</span> of{' '}
-            <span className="font-bold text-white font-mono">{totalPages}</span>
+        {/* Pagination Bar */}
+        {totalPages > 1 && (
+          <div className="border-t border-slate-800/80 px-4 py-3 flex items-center justify-between text-xs text-slate-400">
+            <div>
+              Page <span className="font-bold text-white">{page}</span> of{' '}
+              <span className="font-bold text-white">{totalPages}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="rounded-md border border-slate-700 bg-slate-900 p-1.5 text-slate-300 hover:bg-slate-800 disabled:opacity-40"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                className="rounded-md border border-slate-700 bg-slate-900 p-1.5 text-slate-300 hover:bg-slate-800 disabled:opacity-40"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(p - 1, 1))}
-              disabled={page <= 1}
-              className="flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-40"
-            >
-              <ChevronLeft className="h-4 w-4" /> Previous
-            </button>
-            <button
-              onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-              disabled={page >= totalPages}
-              className="flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-40"
-            >
-              Next <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Flight Detail Modal Drawer */}
+      {/* Slide-over Inspection Drawer */}
       {selectedFlight && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-2xl rounded-2xl border border-[#1f335e] bg-[#0c1324] p-6 shadow-2xl">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-xl bg-sky-500/10 p-2 text-sky-400 border border-sky-500/30">
-                  <Plane className="h-6 w-6" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-bold text-white font-mono">{selectedFlight.flight_id}</h3>
-                    <RiskBadge tier={selectedFlight.delay_risk_tier} />
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                      {selectedFlight.dataset_label}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-400">
-                    {selectedFlight.carrier_name} &bull; {selectedFlight.route}
-                  </p>
-                </div>
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-[#0f172a] border-l border-slate-800 h-full overflow-y-auto p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Plane className="h-5 w-5 text-sky-400" />
+                <h3 className="text-base font-bold text-white font-mono">{selectedFlight.flight_id}</h3>
+                <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
+                  {selectedFlight.carrier_code}
+                </span>
               </div>
               <button
                 onClick={() => setSelectedFlight(null)}
@@ -327,82 +302,58 @@ export const FlightAnalysisView: React.FC<FlightAnalysisViewProps> = ({
               </button>
             </div>
 
-            {/* Flight Body Grid */}
-            <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
-              <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Departure Origin</span>
-                <span className="font-bold text-white font-mono text-sm">{selectedFlight.origin}</span>
-                <p className="text-[11px] text-slate-400 truncate">{selectedFlight.origin_name}</p>
-              </div>
-
-              <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Arrival Destination</span>
-                <span className="font-bold text-white font-mono text-sm">{selectedFlight.dest}</span>
-                <p className="text-[11px] text-slate-400 truncate">{selectedFlight.dest_name}</p>
-              </div>
-
-              <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Scheduled Departure</span>
-                <span className="font-bold text-sky-400 font-mono text-sm">{selectedFlight.scheduled_dep_time}</span>
-                <p className="text-[11px] text-slate-400">Hour {selectedFlight.dep_hour}:00</p>
-              </div>
-
-              <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Arrival Status</span>
-                <span
-                  className={`font-bold font-mono text-sm ${
-                    selectedFlight.is_delayed ? 'text-rose-400' : 'text-emerald-400'
-                  }`}
-                >
-                  {selectedFlight.arr_delay_minutes > 0
-                    ? `+${selectedFlight.arr_delay_minutes} min Late`
-                    : `${selectedFlight.arr_delay_minutes} min On-Time`}
+            <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3 space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-400">Route Corridor</span>
+                <span className="font-bold text-white font-mono">
+                  {selectedFlight.origin} ({selectedFlight.origin_name}) &rarr; {selectedFlight.dest} ({selectedFlight.dest_name})
                 </span>
-                <p className="text-[11px] text-slate-400">{selectedFlight.delay_cause}</p>
               </div>
-
-              <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Runway Taxi Time</span>
-                <span className="font-bold text-white font-mono text-sm">{selectedFlight.taxi_out_minutes} min</span>
-                <p className="text-[11px] text-slate-400">Congestion: {selectedFlight.congestion_level}</p>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Distance</span>
+                <span className="font-mono text-slate-200">{selectedFlight.distance_miles} statute miles</span>
               </div>
-
-              <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Distance & Flight Time</span>
-                <span className="font-bold text-white font-mono text-sm">{selectedFlight.distance_miles} miles</span>
-                <p className="text-[11px] text-slate-400">{selectedFlight.air_time_minutes} min airborne</p>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Scheduled Departure</span>
+                <span className="font-mono text-slate-200">{selectedFlight.scheduled_dep_time} Local</span>
               </div>
             </div>
 
-            {/* Environmental & Terminal Conditions */}
-            <div className="mt-4 rounded-xl border border-slate-800 bg-slate-900/40 p-4">
-              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <Wind className="h-4 w-4 text-sky-400" /> Terminal Weather Conditions
-              </h4>
-              <div className="grid grid-cols-3 gap-3 text-xs text-slate-300">
-                <div>
-                  <span className="text-[10px] text-slate-400 block">Origin Conditions</span>
-                  <span className="font-semibold">{selectedFlight.origin_weather}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 block">Surface Wind</span>
-                  <span className="font-semibold font-mono">{selectedFlight.wind_speed_knots} knots</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 block">Atmospheric Visibility</span>
-                  <span className="font-semibold font-mono">{selectedFlight.visibility_miles} statute miles</span>
-                </div>
+            <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3 space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-400">Terminal Weather</span>
+                <span className="text-slate-200">{selectedFlight.origin_weather} ({selectedFlight.wind_speed_knots} kts)</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Runway Taxi-Out</span>
+                <span className="font-mono text-slate-200">{selectedFlight.taxi_out_minutes} minutes</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Airspace Congestion</span>
+                <span className="text-slate-200">{selectedFlight.congestion_level}</span>
               </div>
             </div>
 
-            <div className="mt-5 flex justify-end">
-              <button
-                onClick={() => setSelectedFlight(null)}
-                className="rounded-xl bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700"
-              >
-                Close Telemetry View
-              </button>
+            <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3 space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-400">Arrival Status</span>
+                <span className={`font-bold font-mono ${selectedFlight.is_delayed ? 'text-rose-400' : 'text-emerald-400'}`}>
+                  {selectedFlight.arr_delay_minutes > 0 ? `+${selectedFlight.arr_delay_minutes}m Delay` : `${selectedFlight.arr_delay_minutes}m (On-Time)`}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Primary Delay Reason</span>
+                <span className="text-slate-200">{selectedFlight.delay_cause}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Assigned Risk Tier</span>
+                <RiskBadge tier={selectedFlight.delay_risk_tier} />
+              </div>
             </div>
+
+            <p className="text-[11px] text-slate-500 italic text-center">
+              Record from 1,250 FAA/BTS flight benchmark fixture
+            </p>
           </div>
         </div>
       )}
