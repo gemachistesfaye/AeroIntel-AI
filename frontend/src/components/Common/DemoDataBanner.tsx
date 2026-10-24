@@ -16,15 +16,15 @@ export const DemoDataBanner: React.FC<DemoDataBannerProps> = ({ sectionTitle }) 
           <div>
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-400 border border-amber-500/30">
-                <Info className="h-3 w-3" /> DEMO BENCHMARK DATASET
+                <Info className="h-3 w-3" /> DEMO BENCHMARK DATASET (CALIBRATED SYNTHETIC)
               </span>
               <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-400 border border-emerald-500/30">
-                <Cpu className="h-3 w-3" /> SCIKIT-LEARN BASELINE ACTIVE
+                <Cpu className="h-3 w-3" /> SCIKIT-LEARN OPERATIONAL
               </span>
             </div>
             <p className="mt-1 text-xs text-slate-300">
               {sectionTitle ? `${sectionTitle} utilizes ` : 'Operating on '}
-              FAA/BTS 1,250 flight historical benchmark records. Live ADS-B radar ingestion and deep temporal LSTM integration are scheduled for Phase 2.
+              1,250 calibrated synthetic benchmark records generated to mirror FAA/BTS distributions. Real historical flight archives can be uploaded & ingested via Data Management.
             </p>
             <p className="mt-0.5 text-[11px] text-slate-400 italic">
               Advisory: Platform predictions and analytics are statistical estimates based on historical flight data, not guaranteed operational outcomes.

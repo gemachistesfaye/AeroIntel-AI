@@ -98,7 +98,7 @@ class AviationDataManager:
         ]].to_dict(orient="records")
 
         return {
-            "dataset_label": "DEMO DATASET (FAA/BTS Benchmark)",
+            "dataset_label": "Calibrated Synthetic Benchmark (FAA/BTS Distribution)",
             "total_flights": total_flights,
             "on_time_rate_pct": on_time_rate,
             "avg_delay_minutes": avg_delay_all,
@@ -233,7 +233,7 @@ class AviationDataManager:
         hubs.sort(key=lambda x: x["punctuality_pct"])
 
         return {
-            "dataset_label": "DEMO BENCHMARK CORRIDORS",
+            "dataset_label": "Calibrated Synthetic Benchmark Corridors",
             "corridors": corridors[:30],
             "hubs": hubs,
             "selected_corridor": selected_corridor
@@ -258,7 +258,7 @@ class AviationDataManager:
         file_size_kb = round(data_path.stat().st_size / 1024, 1) if data_path.exists() else 0.0
 
         return {
-            "dataset_name": "FAA / BTS Historical Flight Delay Benchmark",
+            "dataset_name": "Calibrated Synthetic Benchmark Fixture (FAA/BTS Distributions)",
             "file_path": str(data_path),
             "file_size_kb": file_size_kb,
             "total_records": len(df),
@@ -271,9 +271,9 @@ class AviationDataManager:
                 "schema_valid": True
             },
             "ingestion_status": {
-                "source": "Local Benchmark CSV (Demo Data)",
+                "source": "Synthetic Benchmark CSV (app/data/sample_flights.csv)",
                 "live_stream_connected": False,
-                "live_stream_notes": "Live ADS-B and NOAA METAR streaming pipeline scheduled for Phase 2."
+                "live_stream_notes": "Live ADS-B and NOAA METAR streaming pipeline scheduled for Phase 2. Real historical CSVs can be uploaded via Data Management."
             }
         }
 
