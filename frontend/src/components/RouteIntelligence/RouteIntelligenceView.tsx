@@ -79,14 +79,14 @@ export const RouteIntelligenceView: React.FC = () => {
             <p className="text-xs text-slate-400">Click any corridor route or airport node to inspect delay risk and traffic volume</p>
           </div>
           <div className="flex items-center gap-3 text-xs">
-            <span className="flex items-center gap-1.5 text-emerald-400">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" /> &gt;70% On-Time
+            <span className="flex items-center gap-1.5 text-slate-400">
+              <span className="h-2 w-2 rounded-full bg-slate-500" /> Normal Corridors
             </span>
             <span className="flex items-center gap-1.5 text-amber-400">
-              <span className="h-2 w-2 rounded-full bg-amber-400" /> 60-70%
+              <span className="h-2 w-2 rounded-full bg-amber-400" /> High Delay Risk
             </span>
-            <span className="flex items-center gap-1.5 text-rose-400">
-              <span className="h-2 w-2 rounded-full bg-rose-400" /> &lt;60% Congested
+            <span className="flex items-center gap-1.5 text-sky-400">
+              <span className="h-2 w-2 rounded-full bg-sky-400" /> Selected Route
             </span>
           </div>
         </div>
@@ -119,11 +119,9 @@ export const RouteIntelligenceView: React.FC = () => {
               const onTime = c.on_time_pct ?? 65;
               const strokeColor = isSelected
                 ? '#38bdf8'
-                : onTime >= 70
-                ? '#10b981'
-                : onTime >= 60
+                : onTime < 65
                 ? '#f59e0b'
-                : '#f43f5e';
+                : '#475569';
 
               return (
                 <g key={c.route} className="cursor-pointer" onClick={() => { setSelectedRoute(c); setSelectedHub(null); }}>

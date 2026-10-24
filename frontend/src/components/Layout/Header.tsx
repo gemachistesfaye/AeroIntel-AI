@@ -39,15 +39,15 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         <div className="flex items-center flex-wrap gap-2.5">
-          {/* Aviation Clocks */}
-          <div className="flex items-center gap-2.5 rounded-lg border border-slate-800 bg-slate-900/80 px-3 py-1 font-mono text-xs">
-            <div className="flex items-center gap-1.5 text-sky-400">
-              <Globe className="h-3 w-3" />
+          {/* Aviation Clocks - Neutral Monochromatic */}
+          <div className="flex items-center gap-2.5 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1 font-mono text-xs text-slate-300">
+            <div className="flex items-center gap-1.5">
+              <Globe className="h-3 w-3 text-slate-400" />
               <span>{utcTime || '00:00:00 UTC'}</span>
             </div>
             <div className="h-3 w-px bg-slate-800" />
-            <div className="flex items-center gap-1.5 text-slate-400">
-              <Clock className="h-3 w-3" />
+            <div className="flex items-center gap-1.5">
+              <Clock className="h-3 w-3 text-slate-400" />
               <span>{localTime || '00:00:00'}</span>
             </div>
           </div>
@@ -61,14 +61,14 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             <span className={`h-1.5 w-1.5 rounded-full ${isBackendConnected ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-            <span>{isBackendConnected ? 'Flask API Online' : 'Offline Demo Mode'}</span>
+            <span>{isBackendConnected ? 'API Connected' : 'Offline Demo'}</span>
           </div>
 
           {/* Refresh Action */}
           <button
             onClick={onRefresh}
             disabled={isRefreshing}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900/80 px-2.5 py-1 text-xs text-slate-300 transition-colors hover:bg-slate-800 hover:text-white disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1 text-xs text-slate-300 transition-colors hover:bg-slate-800 hover:text-white disabled:opacity-50"
             title="Refresh active metrics"
           >
             <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin text-sky-400' : 'text-slate-400'}`} />

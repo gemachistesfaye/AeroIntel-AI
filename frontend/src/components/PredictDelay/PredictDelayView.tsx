@@ -334,7 +334,7 @@ export const PredictDelayView: React.FC = () => {
                     <path
                       d="M 20 80 A 60 60 0 0 1 140 80"
                       fill="none"
-                      stroke={probPct >= 60 ? '#f43f5e' : probPct >= 40 ? '#f59e0b' : '#10b981'}
+                      stroke={probPct >= 50 ? '#f59e0b' : '#38bdf8'}
                       strokeWidth="12"
                       strokeLinecap="round"
                       strokeDasharray="188"
@@ -356,8 +356,8 @@ export const PredictDelayView: React.FC = () => {
                   <span
                     className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                       isDelayed
-                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                        : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                        : 'bg-slate-800 text-slate-300 border border-slate-700'
                     }`}
                   >
                     {result.prediction.risk_tier} Risk
@@ -376,7 +376,7 @@ export const PredictDelayView: React.FC = () => {
                     {result.explanation.attributions.slice(0, 3).map((attr, i) => (
                       <div key={i} className="flex items-center justify-between text-xs p-2 rounded bg-slate-900 border border-slate-800">
                         <span className="text-slate-300">{attr.feature}</span>
-                        <span className={`font-mono font-semibold ${attr.impact_pct > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                        <span className="font-mono text-slate-300 font-semibold">
                           {attr.impact_pct > 0 ? `+${attr.impact_pct}%` : `${attr.impact_pct}%`}
                         </span>
                       </div>
