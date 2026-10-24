@@ -25,8 +25,16 @@ interface SidebarProps {
   isBackendConnected: boolean;
 }
 
+interface NavItem {
+  id: NavTab;
+  label: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: string;
+}
+
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isBackendConnected }) => {
-  const navItems = [
+  const navItems: NavItem[] = [
     {
       id: 'dashboard' as NavTab,
       label: 'Overview',
@@ -42,9 +50,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isBack
     {
       id: 'predict-delay' as NavTab,
       label: 'Delay Predictor',
-      description: 'Pre-departure ML simulator',
+      description: 'Pre-departure flight simulator',
       icon: Calculator,
-      badge: 'ML 1.0',
     },
     {
       id: 'route-intelligence' as NavTab,
@@ -77,11 +84,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isBack
           <div>
             <div className="flex items-center gap-1.5">
               <h1 className="text-sm font-semibold tracking-tight text-white">AeroIntel</h1>
-              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-sky-300 border border-slate-700">
-                PRO
+              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                OCC
               </span>
             </div>
-            <p className="text-[11px] text-slate-400">Aviation Intelligence</p>
+            <p className="text-[11px] text-slate-400">Flight Operations Control</p>
           </div>
         </div>
       </div>
