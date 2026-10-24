@@ -118,7 +118,7 @@ class DataProcessingAndMLExhaustiveTests(unittest.TestCase):
         self.assertEqual(data_base["data"]["prediction"]["model_type"], "baseline")
 
     def test_05_model_comparison_api(self):
-        """Verifies that /api/model/compare exposes side-by-side metrics."""
+        """Verifies that /api/model/compare exposes side-by-side metrics and selected model."""
         res = self.client.get("/api/model/compare")
         self.assertEqual(res.status_code, 200)
         data = json.loads(res.data)
@@ -128,6 +128,8 @@ class DataProcessingAndMLExhaustiveTests(unittest.TestCase):
         self.assertIn("candidate_model", comp)
         self.assertIn("class_distribution", comp)
         self.assertIn("tradeoff_explanation", comp)
+        self.assertIn("selected_model_name", comp)
+        self.assertEqual(comp["selected_model_key"], "baseline")
 
     def test_06_big_data_analytics_endpoints(self):
         """Tests analytics summary, carrier benchmarks, and corridors."""

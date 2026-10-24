@@ -1,20 +1,22 @@
 {
-  "model_type": "HistGradientBoosting Classifier (Candidate)",
-  "model_version": "2.0.0-candidate",
+  "model_type": "Logistic Regression (Linear Baseline)",
+  "model_version": "1.0.0-selected",
   "dataset_type": "FAA/BTS Historical Benchmark",
+  "delay_threshold_minutes": 15,
   "train_samples": 1000,
   "test_samples": 250,
   "classification": {
-    "accuracy": 0.632,
-    "precision": 0.386,
-    "recall": 0.2785,
-    "f1_score": 0.3235,
-    "roc_auc": 0.5262,
+    "accuracy": 0.604,
+    "precision": 0.398,
+    "recall": 0.4937,
+    "f1_score": 0.4407,
+    "roc_auc": 0.6009,
+    "pr_auc": 0.3745,
     "confusion_matrix": {
-      "true_negative": 136,
-      "false_positive": 35,
-      "false_negative": 57,
-      "true_positive": 22
+      "true_negative": 112,
+      "false_positive": 59,
+      "false_negative": 40,
+      "true_positive": 39
     },
     "roc_curve": [
       {
@@ -22,76 +24,76 @@
         "tpr": 0.0
       },
       {
-        "fpr": 0.0351,
-        "tpr": 0.038
+        "fpr": 0.0702,
+        "tpr": 0.0506
       },
       {
-        "fpr": 0.076,
-        "tpr": 0.1013
-      },
-      {
-        "fpr": 0.0994,
+        "fpr": 0.0936,
         "tpr": 0.1392
       },
       {
-        "fpr": 0.152,
-        "tpr": 0.1899
+        "fpr": 0.1228,
+        "tpr": 0.2025
       },
       {
-        "fpr": 0.1813,
-        "tpr": 0.2405
+        "fpr": 0.1754,
+        "tpr": 0.3038
       },
       {
-        "fpr": 0.2281,
-        "tpr": 0.3291
+        "fpr": 0.2222,
+        "tpr": 0.3797
       },
       {
-        "fpr": 0.2632,
-        "tpr": 0.4177
+        "fpr": 0.3041,
+        "tpr": 0.4304
       },
       {
-        "fpr": 0.345,
-        "tpr": 0.4684
+        "fpr": 0.3275,
+        "tpr": 0.481
       },
       {
-        "fpr": 0.3977,
-        "tpr": 0.5063
+        "fpr": 0.3801,
+        "tpr": 0.519
       },
       {
-        "fpr": 0.4912,
-        "tpr": 0.5443
+        "fpr": 0.4035,
+        "tpr": 0.557
       },
       {
-        "fpr": 0.6491,
-        "tpr": 0.5823
+        "fpr": 0.4503,
+        "tpr": 0.5949
       },
       {
-        "fpr": 0.7076,
-        "tpr": 0.6203
+        "fpr": 0.4971,
+        "tpr": 0.6329
       },
       {
-        "fpr": 0.7485,
+        "fpr": 0.5205,
         "tpr": 0.6835
       },
       {
-        "fpr": 0.7778,
+        "fpr": 0.5439,
         "tpr": 0.7342
       },
       {
-        "fpr": 0.8129,
-        "tpr": 0.8101
+        "fpr": 0.6199,
+        "tpr": 0.7722
       },
       {
-        "fpr": 0.8421,
-        "tpr": 0.8608
+        "fpr": 0.7368,
+        "tpr": 0.7975
       },
       {
-        "fpr": 0.8889,
-        "tpr": 0.8987
+        "fpr": 0.7719,
+        "tpr": 0.8481
       },
       {
-        "fpr": 0.9298,
-        "tpr": 0.962
+        "fpr": 0.8304,
+        "tpr": 0.9114
+      },
+      {
+        "fpr": 0.8772,
+        "tpr": 0.9494
       },
       {
         "fpr": 1.0,
@@ -104,76 +106,76 @@
         "precision": 0.316
       },
       {
-        "recall": 0.9747,
-        "precision": 0.3249
-      },
-      {
-        "recall": 0.9114,
-        "precision": 0.3214
-      },
-      {
-        "recall": 0.8608,
-        "precision": 0.3223
-      },
-      {
-        "recall": 0.7848,
-        "precision": 0.3131
-      },
-      {
-        "recall": 0.6962,
-        "precision": 0.2973
-      },
-      {
-        "recall": 0.6456,
-        "precision": 0.2965
-      },
-      {
-        "recall": 0.5949,
-        "precision": 0.2975
-      },
-      {
-        "recall": 0.5696,
-        "precision": 0.3103
-      },
-      {
-        "recall": 0.557,
+        "recall": 1.0,
         "precision": 0.3333
       },
       {
-        "recall": 0.5063,
-        "precision": 0.3361
+        "recall": 0.9494,
+        "precision": 0.3348
       },
       {
-        "recall": 0.4937,
-        "precision": 0.3679
+        "recall": 0.8987,
+        "precision": 0.3365
       },
       {
-        "recall": 0.4557,
-        "precision": 0.3871
+        "recall": 0.8481,
+        "precision": 0.3384
       },
       {
-        "recall": 0.4177,
-        "precision": 0.4177
+        "recall": 0.7975,
+        "precision": 0.3405
       },
       {
-        "recall": 0.3291,
-        "precision": 0.3939
+        "recall": 0.7848,
+        "precision": 0.3605
       },
       {
-        "recall": 0.2405,
-        "precision": 0.3585
+        "recall": 0.7468,
+        "precision": 0.3734
       },
       {
-        "recall": 0.1772,
-        "precision": 0.35
+        "recall": 0.6962,
+        "precision": 0.3793
       },
       {
-        "recall": 0.1266,
-        "precision": 0.3704
+        "recall": 0.6203,
+        "precision": 0.3712
       },
       {
-        "recall": 0.0506,
-        "precision": 0.2857
+        "recall": 0.5823,
+        "precision": 0.3866
+      },
+      {
+        "recall": 0.519,
+        "precision": 0.3868
+      },
+      {
+        "recall": 0.481,
+        "precision": 0.4086
+      },
+      {
+        "recall": 0.4051,
+        "precision": 0.4051
+      },
+      {
+        "recall": 0.3671,
+        "precision": 0.4394
+      },
+      {
+        "recall": 0.2911,
+        "precision": 0.434
+      },
+      {
+        "recall": 0.2025,
+        "precision": 0.4
+      },
+      {
+        "recall": 0.1392,
+        "precision": 0.4074
+      },
+      {
+        "recall": 0.0253,
+        "precision": 0.1429
       },
       {
         "recall": 0.0,
@@ -239,8 +241,10 @@
     }
   ],
   "implementation_status": {
-    "status": "Operational Candidate & Baseline",
+    "status": "Operational Selected Model",
     "is_mock": false,
-    "notes": "Both Baseline Logistic Regression and Candidate HistGradientBoosting models trained and evaluated side-by-side."
+    "selected_model": "Logistic Regression (Linear Baseline)",
+    "selection_rationale": "Logistic Regression is selected as the operational model due to superior discriminatory performance (ROC-AUC: 0.6009 vs 0.5262, F1-score: 0.4407 vs 0.3235, Recall: 49.37% vs 27.85%). HistGradientBoosting achieved higher raw accuracy (63.20% vs 60.40%) solely by overpredicting the dominant On-Time class, while missing 57 actual disruptions. In flight dispatch operations, missing delays causes costly gate conflicts, so high recall and calibrated probabilities are prioritized.",
+    "notes": "Logistic Regression empirically selected over HistGradientBoosting based on held-out test ROC-AUC and Recall."
   }
 }

@@ -85,15 +85,18 @@ class AviationModelService:
         if not self.is_ready:
             raise RuntimeError("Model pipelines have not been trained or loaded.")
 
-        # Select pipeline
-        if model_type.lower() == "baseline" and self.baseline_pipeline is not None:
-            pipeline = self.baseline_pipeline
-            model_name = "Baseline (Logistic Regression)"
-            version = "1.0.0-linear-baseline"
-        else:
-            pipeline = self.candidate_pipeline or self.baseline_pipeline
+        # Select pipeline based on user request or empirically selected primary model
+        target_type = str(model_type or "baseline").strip().lower()
+        if target_type in ["candidate", "histgradientboost", "gradient_boost"] and self.candidate_pipeline is not None:
+            pipeline = self.candidate_pipeline
             model_name = "Candidate (HistGradientBoosting)"
             version = "2.0.0-gradient-boost"
+            resolved_type = "candidate"
+        else:
+            pipeline = self.baseline_pipeline or self.candidate_pipeline
+            model_name = "Selected Operational Model (Logistic Regression)"
+            version = "1.0.0-linear-baseline"
+            resolved_type = "baseline"
 
         # Sanitize and validate inputs
         raw_dict = {
@@ -154,7 +157,7 @@ class AviationModelService:
         return {
             "flight_query": raw_dict,
             "prediction": {
-                "model_type": model_type,
+                "model_type": resolved_type,
                 "model_name": model_name,
                 "model_version": version,
                 "delay_probability": round(delay_prob, 4),

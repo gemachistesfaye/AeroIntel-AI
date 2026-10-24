@@ -207,6 +207,9 @@ export interface ModelComparisonData {
     delay_rate_pct: number;
     naive_majority_accuracy: number;
   };
+  selected_model_key?: 'baseline' | 'candidate';
+  selected_model_name?: string;
+  selection_rationale?: string;
   baseline_model: ModelClassificationMetrics;
   candidate_model: ModelClassificationMetrics;
   regression: {

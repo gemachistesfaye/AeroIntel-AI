@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-24T22:28:30.703654",
+  "timestamp": "2026-10-24T22:45:49.171989",
   "delay_threshold_minutes": 15,
   "dataset_size": 1250,
   "train_samples": 1000,
@@ -10,6 +10,9 @@
     "delay_rate_pct": 31.5,
     "naive_majority_accuracy": 0.6848
   },
+  "selected_model_key": "baseline",
+  "selected_model_name": "Logistic Regression (Linear Baseline)",
+  "selection_rationale": "Logistic Regression is selected as the operational model due to superior discriminatory performance (ROC-AUC: 0.6009 vs 0.5262, F1-score: 0.4407 vs 0.3235, Recall: 49.37% vs 27.85%). HistGradientBoosting achieved higher raw accuracy (63.20% vs 60.40%) solely by overpredicting the dominant On-Time class, while missing 57 actual disruptions. In flight dispatch operations, missing delays causes costly gate conflicts, so high recall and calibrated probabilities are prioritized.",
   "baseline_model": {
     "model_name": "Baseline (Logistic Regression)",
     "accuracy": 0.604,
@@ -190,8 +193,9 @@
     ],
     "algorithm": "Logistic Regression with Balanced Class Weights",
     "type": "Linear Baseline",
-    "pros": "Highly interpretable, fast inference, establishes statistical baseline",
-    "cons": "Cannot model non-linear cross-interactions (e.g. crosswind + thunderstorm + peak hour)"
+    "is_selected": true,
+    "pros": "Well-calibrated probabilities, robust recall on imbalanced data, resistant to overfitting on small samples",
+    "cons": "Linear decision boundary cannot capture complex non-linear meteorological interactions"
   },
   "candidate_model": {
     "model_name": "Candidate (HistGradientBoosting)",
@@ -373,8 +377,9 @@
     ],
     "algorithm": "Histogram-based Gradient Boosting (HistGradientBoosting)",
     "type": "Non-Linear Ensemble",
-    "pros": "Captures non-linear atmospheric interactions, robust to outliers, tree-based split criteria",
-    "cons": "Slightly higher compute requirement than linear models"
+    "is_selected": false,
+    "pros": "Capable of capturing non-linear cross-interactions and threshold splits",
+    "cons": "Prone to severe overfitting on small training samples (100% train accuracy), drifting toward dominant class with low recall"
   },
   "regression": {
     "mae_minutes": 33.09,

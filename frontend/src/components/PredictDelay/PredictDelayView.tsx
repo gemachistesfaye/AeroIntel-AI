@@ -55,7 +55,7 @@ const WEATHER_OPTIONS = [
 ];
 
 export const PredictDelayView: React.FC = () => {
-  const [selectedModelType, setSelectedModelType] = useState<'candidate' | 'baseline'>('candidate');
+  const [selectedModelType, setSelectedModelType] = useState<'candidate' | 'baseline'>('baseline');
   const [form, setForm] = useState<PredictionRequest>({
     carrier_code: 'DL',
     origin: 'ATL',
@@ -72,7 +72,7 @@ export const PredictDelayView: React.FC = () => {
     congestion_level: 'High',
     taxi_out_minutes: 32,
     distance_miles: 1946,
-    model_type: 'candidate',
+    model_type: 'baseline',
   });
 
   const [loading, setLoading] = useState(false);
@@ -217,17 +217,6 @@ export const PredictDelayView: React.FC = () => {
             <div className="flex items-center gap-1 rounded-xl bg-slate-900 border border-slate-700 p-1">
               <button
                 type="button"
-                onClick={() => setSelectedModelType('candidate')}
-                className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
-                  selectedModelType === 'candidate'
-                    ? 'bg-sky-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                HistGradientBoosting
-              </button>
-              <button
-                type="button"
                 onClick={() => setSelectedModelType('baseline')}
                 className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
                   selectedModelType === 'baseline'
@@ -235,7 +224,18 @@ export const PredictDelayView: React.FC = () => {
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                Logistic Regression
+                ★ Logistic Regression (Selected)
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedModelType('candidate')}
+                className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                  selectedModelType === 'candidate'
+                    ? 'bg-sky-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                HistGradientBoosting (Candidate)
               </button>
             </div>
           </div>
@@ -467,7 +467,7 @@ export const PredictDelayView: React.FC = () => {
                 ) : (
                   <>
                     <BrainCircuit className="h-4 w-4" />
-                    <span>Run AI Delay Prediction ({selectedModelType === 'candidate' ? 'HistGradientBoosting' : 'LogisticRegression'})</span>
+                    <span>Run AI Delay Prediction ({selectedModelType === 'baseline' ? 'Selected: Logistic Regression' : 'Candidate: HistGradientBoosting'})</span>
                   </>
                 )}
               </button>

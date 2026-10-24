@@ -13,7 +13,7 @@ def predict_flight():
                 "error": "Request body must contain valid JSON flight parameters."
             }), 400
 
-        model_type = payload.get("model_type", "candidate")
+        model_type = payload.get("model_type", "baseline")
         result = model_service.predict_flight_delay(payload, model_type=model_type)
         return jsonify({"success": True, "data": result})
     except Exception as e:
@@ -23,7 +23,7 @@ def predict_flight():
 def predict_health():
     return jsonify({
         "ready": model_service.is_ready,
-        "candidate_model": "HistGradientBoosting (Candidate)",
-        "baseline_model": "LogisticRegression (Linear Baseline)",
+        "selected_model": "LogisticRegression (Selected Operational Model)",
+        "candidate_model": "HistGradientBoosting (Alternative Candidate)",
         "type": "Operational Comparative Pipelines"
     })

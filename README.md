@@ -29,12 +29,29 @@ The platform models genuine physical and operational constraints: **runway cross
 
 ---
 
-## 3. Honest Machine Learning & Target Leakage Prevention
+## 3. Honest Machine Learning & Model Selection
 
 - **Strict Zero Target Leakage**: Models use ONLY variables realistically available *before pushback* (`dep_hour`, `day_of_week`, `origin_weather`, `wind_speed_knots`, `taxi_out_minutes` scheduled buffer, `historical_carrier_delay_rate`, etc.). Future post-departure variables (`arr_delay_minutes`, `dep_delay_minutes`, `actual_dep_time`, `actual_arr_time`, `air_time_minutes`, `delay_cause`) are strictly excluded.
-- **Configurable Target Threshold**: Flight arrival delay is explicitly defined as `arr_delay_minutes >= 15` (FAA standard lateness threshold; configurable to 30 or 45 min).
-- **Comparative Baseline**: Evaluates **Baseline Linear Model** (Logistic Regression with balanced weights) against **Stronger Candidate Model** (HistGradientBoosting tree ensemble) on an 80/20 holdout test split (250 flights).
-- **Explainability & Scientific Transparency**: Explains each prediction through local feature deviations from nominal fleet baselines, accompanied by an explicit notice that observational ML demonstrates historical statistical correlation, not physical causality.
+- **Configurable Target Threshold**: Flight arrival delay is explicitly defined as `arr_delay_minutes >= 15` (FAA standard lateness threshold; dynamically re-trainable to 30 or 45 min).
+- **Reproducible Train/Test Split**: 80/20 train/test split with stratification on `random_state=42` (1,000 train rows, 250 held-out test rows).
+- **Preprocessing Fitted Only on Training Split**: Preprocessors (`StandardScaler`, `OneHotEncoder`) are fit strictly inside `Pipeline` on the training split only, eliminating data leakage.
+- **Empirical Model Selection (Logistic Regression Selected)**:
+  - **Logistic Regression (Selected Operational Model)**: Achieved superior discriminatory power across thresholds (**ROC-AUC: 0.6009**, **F1: 0.4407**, **Recall: 49.37%**).
+  - **HistGradientBoosting (Alternative Candidate)**: Achieved nominally higher raw accuracy (63.20% vs 60.40%) solely by predicting the 68.5% majority On-Time class, but suffered from severe training set overfitting (100% train accuracy) and low disruption recall (**27.85%**, missing 57 out of 79 delays; **ROC-AUC: 0.5262**).
+  - For an aviation early-warning platform, catching disruptions is operationally far more critical than majority-class guessing, so **Logistic Regression is empirically selected as the primary platform model**.
+
+### Verified Evaluation Scorecard (Held-Out 20% Test Split)
+
+| Evaluation Metric | Naive Majority Baseline | Selected Model (Logistic Regression) | Candidate Model (HistGradientBoosting) |
+|---|---|---|---|
+| **Model Type** | Zero-Intelligence Dummy | Linear Classifier (Balanced Weights) | Non-Linear Tree Ensemble |
+| **ROC-AUC** | 0.5000 | **0.6009** (Superior) | 0.5262 |
+| **PR-AUC** | 0.3160 | **0.3745** | 0.3427 |
+| **F1 Score** | 0.0000 | **0.4407** | 0.3235 |
+| **Recall (Delays Caught)** | 0.00% (0 / 79) | **49.37%** (39 / 79 caught) | 27.85% (22 / 79 caught, 57 missed) |
+| **Precision** | 0.00% | **39.80%** | 38.60% |
+| **Accuracy** | **68.48%** (Trivial Majority) | 60.40% | 63.20% (Majority Bias) |
+| **Confusion Matrix** | `[[171, 0], [79, 0]]` | `[[112, 59], [40, 39]]` | `[[136, 35], [57, 22]]` |
 
 ---
 
