@@ -1,0 +1,16 @@
+import sys
+from pathlib import Path
+
+# Ensure backend directory is in sys.path
+backend_dir = Path(__file__).resolve().parent
+if str(backend_dir) not in sys.path:
+    sys.path.insert(0, str(backend_dir))
+
+from app.main import create_app
+from app.core.config import settings
+
+app = create_app()
+
+if __name__ == "__main__":
+    print(f"Starting {settings.PROJECT_NAME} on http://{settings.HOST}:{settings.PORT}")
+    app.run(host=settings.HOST, port=settings.PORT, debug=True)

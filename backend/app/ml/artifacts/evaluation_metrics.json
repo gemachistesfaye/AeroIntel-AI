@@ -1,0 +1,292 @@
+{
+  "model_type": "RandomForest Baseline (Scikit-Learn)",
+  "model_version": "1.0.0-baseline",
+  "dataset_type": "FAA/BTS Historical Benchmark (Sample Data)",
+  "train_samples": 1000,
+  "test_samples": 250,
+  "classification": {
+    "accuracy": 0.668,
+    "precision": 0.4583,
+    "recall": 0.2785,
+    "f1_score": 0.3465,
+    "roc_auc": 0.5703,
+    "confusion_matrix": {
+      "true_negative": 145,
+      "false_positive": 26,
+      "false_negative": 57,
+      "true_positive": 22
+    },
+    "roc_curve": [
+      {
+        "fpr": 0.0,
+        "tpr": 0.0
+      },
+      {
+        "fpr": 0.0234,
+        "tpr": 0.038
+      },
+      {
+        "fpr": 0.0409,
+        "tpr": 0.1139
+      },
+      {
+        "fpr": 0.0994,
+        "tpr": 0.1646
+      },
+      {
+        "fpr": 0.1228,
+        "tpr": 0.2405
+      },
+      {
+        "fpr": 0.1988,
+        "tpr": 0.2785
+      },
+      {
+        "fpr": 0.2398,
+        "tpr": 0.3671
+      },
+      {
+        "fpr": 0.2749,
+        "tpr": 0.3924
+      },
+      {
+        "fpr": 0.3216,
+        "tpr": 0.4177
+      },
+      {
+        "fpr": 0.3801,
+        "tpr": 0.443
+      },
+      {
+        "fpr": 0.4152,
+        "tpr": 0.4937
+      },
+      {
+        "fpr": 0.4386,
+        "tpr": 0.519
+      },
+      {
+        "fpr": 0.5263,
+        "tpr": 0.557
+      },
+      {
+        "fpr": 0.5497,
+        "tpr": 0.5823
+      },
+      {
+        "fpr": 0.5906,
+        "tpr": 0.6203
+      },
+      {
+        "fpr": 0.6082,
+        "tpr": 0.6835
+      },
+      {
+        "fpr": 0.6433,
+        "tpr": 0.7215
+      },
+      {
+        "fpr": 0.6725,
+        "tpr": 0.7468
+      },
+      {
+        "fpr": 0.7251,
+        "tpr": 0.8101
+      },
+      {
+        "fpr": 0.7544,
+        "tpr": 0.8354
+      },
+      {
+        "fpr": 0.807,
+        "tpr": 0.8608
+      },
+      {
+        "fpr": 0.8304,
+        "tpr": 0.8861
+      },
+      {
+        "fpr": 0.8655,
+        "tpr": 0.9241
+      },
+      {
+        "fpr": 0.9298,
+        "tpr": 0.9747
+      },
+      {
+        "fpr": 1.0,
+        "tpr": 1.0
+      }
+    ],
+    "pr_curve": [
+      {
+        "recall": 1.0,
+        "precision": 0.316
+      },
+      {
+        "recall": 0.9873,
+        "precision": 0.325
+      },
+      {
+        "recall": 0.9367,
+        "precision": 0.3217
+      },
+      {
+        "recall": 0.9114,
+        "precision": 0.3288
+      },
+      {
+        "recall": 0.8734,
+        "precision": 0.3301
+      },
+      {
+        "recall": 0.8354,
+        "precision": 0.3333
+      },
+      {
+        "recall": 0.8101,
+        "precision": 0.3404
+      },
+      {
+        "recall": 0.7848,
+        "precision": 0.3483
+      },
+      {
+        "recall": 0.7215,
+        "precision": 0.3413
+      },
+      {
+        "recall": 0.6835,
+        "precision": 0.3439
+      },
+      {
+        "recall": 0.6203,
+        "precision": 0.3356
+      },
+      {
+        "recall": 0.5696,
+        "precision": 0.3309
+      },
+      {
+        "recall": 0.5443,
+        "precision": 0.344
+      },
+      {
+        "recall": 0.5063,
+        "precision": 0.3478
+      },
+      {
+        "recall": 0.4557,
+        "precision": 0.3429
+      },
+      {
+        "recall": 0.4304,
+        "precision": 0.3617
+      },
+      {
+        "recall": 0.4051,
+        "precision": 0.381
+      },
+      {
+        "recall": 0.3797,
+        "precision": 0.411
+      },
+      {
+        "recall": 0.3165,
+        "precision": 0.3968
+      },
+      {
+        "recall": 0.2785,
+        "precision": 0.4151
+      },
+      {
+        "recall": 0.2658,
+        "precision": 0.5
+      },
+      {
+        "recall": 0.1899,
+        "precision": 0.4688
+      },
+      {
+        "recall": 0.1646,
+        "precision": 0.619
+      },
+      {
+        "recall": 0.0886,
+        "precision": 0.6364
+      },
+      {
+        "recall": 0.0,
+        "precision": 1.0
+      }
+    ]
+  },
+  "regression": {
+    "mae_minutes": 32.67,
+    "rmse_minutes": 52.78,
+    "r2_score": 0.0149
+  },
+  "feature_importances": [
+    {
+      "feature": "Arrival Conditions & Airspace",
+      "importance": 0.1718
+    },
+    {
+      "feature": "Departure Weather & Hub Load",
+      "importance": 0.1268
+    },
+    {
+      "feature": "Scheduled Departure Time / Peak",
+      "importance": 0.1193
+    },
+    {
+      "feature": "Wind Speed & Dynamics",
+      "importance": 0.0738
+    },
+    {
+      "feature": "Atmospheric Visibility",
+      "importance": 0.0733
+    },
+    {
+      "feature": "Air",
+      "importance": 0.0632
+    },
+    {
+      "feature": "Airport Taxi & Surface Queue",
+      "importance": 0.0581
+    },
+    {
+      "feature": "Precipitation & Moisture",
+      "importance": 0.0564
+    },
+    {
+      "feature": "Flight Distance & Air Time",
+      "importance": 0.0552
+    },
+    {
+      "feature": "Carrier Fleet Constraints",
+      "importance": 0.0501
+    },
+    {
+      "feature": "Seasonal Climatology",
+      "importance": 0.0449
+    },
+    {
+      "feature": "Day of Week Peak",
+      "importance": 0.0421
+    },
+    {
+      "feature": "Carrier Historical Reliability",
+      "importance": 0.035
+    },
+    {
+      "feature": "Hub Airspace Congestion",
+      "importance": 0.03
+    }
+  ],
+  "implementation_status": {
+    "status": "Operational Baseline",
+    "is_mock": false,
+    "notes": "Real Scikit-Learn RandomForest pipelines trained on realistic aviation parameters. Production grade deep learning (e.g. LSTM temporal sequence + XGBoost ensemble) on live ADS-B is planned for Phase 2."
+  }
+}
