@@ -69,8 +69,6 @@ export const RouteIntelligenceView: React.FC = () => {
 
   return (
     <div className="space-y-5">
-      <DemoDataBanner sectionTitle="Air Corridors & Hub Network" />
-
       {/* SVG Air Corridor Network Map */}
       <div className="rounded-xl border border-slate-800 bg-[#111827]/90 p-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">

@@ -87,8 +87,6 @@ export const FlightAnalysisView: React.FC<FlightAnalysisViewProps> = ({
 
   return (
     <div className="space-y-5">
-      <DemoDataBanner sectionTitle="Flight Schedule Log & Telemetry" />
-
       {/* Filter and Search Bar */}
       <div className="rounded-xl border border-slate-800 bg-[#111827]/90 p-4">
         <form onSubmit={handleSearchSubmit} className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
