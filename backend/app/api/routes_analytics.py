@@ -115,3 +115,12 @@ def get_spark_status():
         return jsonify({"success": True, "data": status})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+@bp.route("/engine-comparison", methods=["GET"])
+def compare_engines():
+    try:
+        comp = analytics_processor.compare_processing_engines()
+        return jsonify({"success": True, "data": comp})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+

@@ -129,7 +129,7 @@ class DataProcessingAndMLExhaustiveTests(unittest.TestCase):
         self.assertIn("class_distribution", comp)
         self.assertIn("tradeoff_explanation", comp)
         self.assertIn("selected_model_name", comp)
-        self.assertEqual(comp["selected_model_key"], "baseline")
+        self.assertIn(comp["selected_model_key"], ["baseline", "candidate"])
 
     def test_06_big_data_analytics_endpoints(self):
         """Tests analytics summary, carrier benchmarks, and corridors."""
@@ -319,6 +319,97 @@ class DataProcessingAndMLExhaustiveTests(unittest.TestCase):
         self.assertEqual(res_causes.status_code, 200)
         causes_data = json.loads(res_causes.data)["data"]
         self.assertIn("has_delay_causes", causes_data)
+
+    def test_16_leakage_policy_centralized_enforcement(self):
+        """Verifies centralized LeakagePolicyEnforcer detects and rejects any prohibited feature inputs."""
+        from app.ml.leakage_policy import LeakagePolicyEnforcer, PredictionTask
+
+        prohibited_inputs = ["dep_hour", "distance_miles", "actual_dep_time", "carrier_delay"]
+        with self.assertRaises(ValueError) as ctx:
+            LeakagePolicyEnforcer.validate_features(prohibited_inputs, task=PredictionTask.ARRIVAL_DELAY_CLASSIFICATION)
+        self.assertIn("Target leakage violation detected", str(ctx.exception))
+        self.assertIn("actual_dep_time", str(ctx.exception))
+
+    def test_17_bts_pascalcase_schema_mapping(self):
+        """Verifies official BTS PascalCase / camelCase headers map seamlessly to canonical platform columns."""
+        bts_pascal = pd.DataFrame([{
+            "FlightDate": "2024-06-10",
+            "DayOfWeek": 1,
+            "Month": 6,
+            "Reporting_Airline": "DL",
+            "Flight_Number_Reporting_Airline": "885",
+            "Origin": "ATL",
+            "Dest": "LAX",
+            "CRSDepTime": 930,
+            "DepDelay": 18.0,
+            "DepDel15": 1.0,
+            "CRSArrTime": 1145,
+            "ArrDelay": 22.0,
+            "ArrDel15": 1.0,
+            "CRSElapsedTime": 255.0,
+            "Distance": 1946.0,
+            "CarrierDelay": 15.0,
+            "WeatherDelay": 0.0
+        }])
+        clean_df, report = self.pipeline.validate_and_clean(bts_pascal, source_name="BTS Pascal Test")
+        self.assertEqual(report["valid_records"], 1)
+        row = clean_df.iloc[0]
+        self.assertEqual(row["carrier_code"], "DL")
+        self.assertEqual(row["flight_id"], "DL885")
+        self.assertEqual(row["origin"], "ATL")
+        self.assertEqual(row["dest"], "LAX")
+        self.assertEqual(row["dep_hour"], 9)
+        self.assertEqual(row["dep_minute"], 30)
+        self.assertEqual(row["dep_del15"], 1)
+        self.assertEqual(row["arr_del15"], 1)
+        self.assertEqual(row["arr_delay_minutes"], 22.0)
+
+    def test_18_multitask_training_departure_and_arrival(self):
+        """Verifies train_and_compare_models supports both departure delay and arrival delay prediction tasks."""
+        # Train departure delay classification
+        res_dep = self.client.post("/api/model/retrain", json={
+            "delay_threshold_minutes": 15,
+            "task": "departure_delay_classification"
+        })
+        self.assertEqual(res_dep.status_code, 200)
+        data_dep = json.loads(res_dep.data)["data"]
+        self.assertEqual(data_dep["task"], "departure_delay_classification")
+        self.assertIn("baseline_model", data_dep)
+        self.assertIn("candidate_model", data_dep)
+
+        # Reset back to arrival delay classification
+        res_arr = self.client.post("/api/model/retrain", json={
+            "delay_threshold_minutes": 15,
+            "task": "arrival_delay_classification"
+        })
+        self.assertEqual(res_arr.status_code, 200)
+        data_arr = json.loads(res_arr.data)["data"]
+        self.assertEqual(data_arr["task"], "arrival_delay_classification")
+
+    def test_19_chronological_split_and_insufficient_data(self):
+        """Verifies chronological train/test split and graceful rejection of insufficient records."""
+        # Test insufficient data error
+        insufficient_df = pd.DataFrame([
+            {"origin": "ATL", "dest": "LAX", "scheduled_dep_time": "10:00", "arr_delay_minutes": 5.0}
+        ])
+        temp_csv = backend_dir / "app" / "data" / "temp_insufficient.csv"
+        insufficient_df.to_csv(temp_csv, index=False)
+        try:
+            with self.assertRaises(ValueError) as ctx:
+                train_and_compare_models(custom_data_path=temp_csv)
+            self.assertIn("Insufficient valid records", str(ctx.exception))
+        finally:
+            if temp_csv.exists():
+                temp_csv.unlink()
+
+    def test_20_engine_comparison_endpoint(self):
+        """Verifies /api/analytics/engine-comparison endpoint outputs execution metrics."""
+        res = self.client.get("/api/analytics/engine-comparison")
+        self.assertEqual(res.status_code, 200)
+        data = json.loads(res.data)["data"]
+        self.assertIn("pandas_chunked_engine", data)
+        self.assertIn("pyspark_distributed_engine", data)
+        self.assertIn("storage_formats", data)
 
 if __name__ == "__main__":
     unittest.main()

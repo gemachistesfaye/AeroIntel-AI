@@ -160,6 +160,15 @@ class AviationModelService:
         else:
             wind_speed_knots = 12.0
 
+        scheduled_elapsed = flight_input.get("scheduled_elapsed_time")
+        if scheduled_elapsed is not None and str(scheduled_elapsed).strip() != "":
+            try:
+                scheduled_elapsed_time = float(scheduled_elapsed)
+            except (ValueError, TypeError):
+                scheduled_elapsed_time = max(30.0, float(distance_miles) / 7.5 + 30.0)
+        else:
+            scheduled_elapsed_time = max(30.0, float(distance_miles) / 7.5 + 30.0)
+
         raw_dict = {
             "carrier_code": str(flight_input.get("carrier_code") or "DL").strip().upper(),
             "origin": origin,
@@ -169,6 +178,7 @@ class AviationModelService:
             "day_of_week": int(flight_input.get("day_of_week") or 2) if str(flight_input.get("day_of_week", "")).isdigit() else 2,
             "month": int(flight_input.get("month") or 6) if str(flight_input.get("month", "")).isdigit() else 6,
             "distance_miles": distance_miles,
+            "scheduled_elapsed_time": round(scheduled_elapsed_time, 1),
             "taxi_out_minutes": taxi_out_minutes,
             "origin_weather": str(flight_input.get("origin_weather") or "Clear").strip(),
             "dest_weather": str(flight_input.get("dest_weather") or "Clear").strip(),
@@ -191,8 +201,6 @@ class AviationModelService:
         # Real regression inference (predicted arrival delay minutes)
         if self.reg_pipeline is not None:
             pred_delay_minutes = float(self.reg_pipeline.predict(df_feat)[0])
-            if delay_prob < 0.25 and pred_delay_minutes > 15:
-                pred_delay_minutes = float(np.clip(pred_delay_minutes * 0.35, -5, 14))
         else:
             pred_delay_minutes = 25.0 if is_delayed_pred else -4.0
 

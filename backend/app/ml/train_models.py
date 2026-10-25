@@ -1,4 +1,5 @@
 import json
+import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
 import joblib
@@ -16,10 +17,16 @@ from sklearn.pipeline import Pipeline
 from sklearn.inspection import permutation_importance
 
 from app.core.config import settings
-from app.ml.pipeline import (
-    engineer_features, build_preprocessor,
-    NUMERICAL_PRE_DEPARTURE_FEATURES, CATEGORICAL_PRE_DEPARTURE_FEATURES
+from app.ml.leakage_policy import (
+    LeakagePolicyEnforcer,
+    PredictionTask,
+    PRE_DEPARTURE_NUMERIC_FEATURES,
+    PRE_DEPARTURE_CATEGORICAL_FEATURES
 )
+from app.ml.pipeline import engineer_features, build_preprocessor
+
+logger = logging.getLogger(__name__)
+
 
 def evaluate_classification_model(
     pipeline: Pipeline,
@@ -43,7 +50,7 @@ def evaluate_classification_model(
         roc_auc = 0.50
         pr_auc = float(rec)
 
-    cm = confusion_matrix(y_test, y_pred, labels=[0, 1]).tolist() # [[TN, FP], [FN, TP]]
+    cm = confusion_matrix(y_test, y_pred, labels=[0, 1]).tolist()  # [[TN, FP], [FN, TP]]
 
     # Sample ROC points for frontend charting (decimate to ~20 points)
     try:
@@ -51,7 +58,7 @@ def evaluate_classification_model(
             fpr, tpr, _ = roc_curve(y_test, y_prob)
             indices = np.linspace(0, len(fpr) - 1, min(20, len(fpr))).astype(int)
             roc_points = [{"fpr": round(float(fpr[i]), 4), "tpr": round(float(tpr[i]), 4)} for i in indices]
-            if roc_points[-1]["fpr"] < 1.0:
+            if roc_points and roc_points[-1]["fpr"] < 1.0:
                 roc_points.append({"fpr": 1.0, "tpr": 1.0})
         else:
             roc_points = [{"fpr": 0.0, "tpr": 0.0}, {"fpr": 1.0, "tpr": 1.0}]
@@ -87,32 +94,70 @@ def evaluate_classification_model(
         "pr_curve": pr_points
     }
 
+
 def train_and_compare_models(
     delay_threshold_minutes: int = 15,
-    custom_data_path: Optional[Path] = None
+    custom_data_path: Optional[Path] = None,
+    task: str = "arrival_delay_classification"
 ) -> Dict[str, Any]:
     """
     Trains and compares Baseline (Logistic Regression) vs Stronger Candidate (HistGradientBoosting),
     plus the continuous delay minutes Regressor.
+    Supports both Arrival Delay (ArrDel15) and Departure Delay (DepDel15) classification tasks.
     """
     data_path = custom_data_path or settings.DATA_PATH
     if not data_path.exists():
         raise FileNotFoundError(f"Training dataset not found at {data_path}")
 
     print("=" * 65)
-    print("AeroIntel AI: Training & Comparative Model Evaluation")
+    print(f"AeroIntel AI: Training & Comparative Model Evaluation [{task}]")
     print("=" * 65)
     print(f"Loading flight records from: {data_path}")
     raw_df = pd.read_csv(data_path, low_memory=False)
-    print(f"Total dataset records: {len(raw_df)}")
+    total_records = len(raw_df)
+    print(f"Total dataset records: {total_records}")
 
-    # Strict target definition: arr_delay_minutes >= threshold
-    if "arr_delay_minutes" in raw_df.columns:
-        y_target = (raw_df["arr_delay_minutes"] >= delay_threshold_minutes).astype(int)
-    elif "is_delayed" in raw_df.columns:
-        y_target = raw_df["is_delayed"].astype(int)
+    if total_records < 10:
+        raise ValueError(
+            f"Insufficient valid records for model training (found {total_records}, minimum required is 10)."
+        )
+
+    # Exclude cancelled and diverted flights from normal delay prediction
+    if "is_cancelled" in raw_df.columns:
+        raw_df = raw_df[~raw_df["is_cancelled"].astype(str).isin(["1", "1.0", "True"])].copy()
+    if "is_diverted" in raw_df.columns:
+        raw_df = raw_df[~raw_df["is_diverted"].astype(str).isin(["1", "1.0", "True"])].copy()
+
+    if len(raw_df) < 10:
+        raise ValueError(
+            f"Insufficient completed flight records after excluding cancellations and diversions (found {len(raw_df)})."
+        )
+
+    # Derive target according to requested task
+    task_enum = PredictionTask.ARRIVAL_DELAY_CLASSIFICATION
+    if "departure" in task.lower():
+        task_enum = PredictionTask.DEPARTURE_DELAY_CLASSIFICATION
+        if "dep_del15" in raw_df.columns and not raw_df["dep_del15"].dropna().empty:
+            y_target = raw_df["dep_del15"].astype(int)
+        elif "dep_delay_minutes" in raw_df.columns:
+            y_target = (raw_df["dep_delay_minutes"] >= delay_threshold_minutes).astype(int)
+        elif "is_delayed" in raw_df.columns:
+            y_target = raw_df["is_delayed"].astype(int)
+        else:
+            raise ValueError("Cannot derive departure delay target: missing 'dep_del15' or 'dep_delay_minutes'.")
+        raw_df["target_delay_flag"] = y_target
     else:
-        raise ValueError("Cannot derive target variable: missing 'arr_delay_minutes' or 'is_delayed'.")
+        # Default: Arrival delay classification
+        task_enum = PredictionTask.ARRIVAL_DELAY_CLASSIFICATION
+        if "arr_delay_minutes" in raw_df.columns:
+            y_target = (raw_df["arr_delay_minutes"] >= delay_threshold_minutes).astype(int)
+        elif "arr_del15" in raw_df.columns and not raw_df["arr_del15"].dropna().empty:
+            y_target = raw_df["arr_del15"].astype(int)
+        elif "is_delayed" in raw_df.columns:
+            y_target = raw_df["is_delayed"].astype(int)
+        else:
+            raise ValueError("Cannot derive arrival delay target: missing 'arr_delay_minutes' or 'arr_del15'.")
+        raw_df["target_delay_flag"] = y_target
 
     raw_df["is_delayed"] = y_target
     df_feat = engineer_features(raw_df)
@@ -123,18 +168,37 @@ def train_and_compare_models(
     delay_rate = delayed_count / len(y_target)
     dummy_majority_accuracy = max(on_time_count, delayed_count) / len(y_target)
 
+    print(f"Prediction Task: {task_enum.value}")
     print(f"Delay Threshold: {delay_threshold_minutes} min lateness")
     print(f"Class Distribution: {on_time_count} On-Time ({1-delay_rate:.1%}) vs {delayed_count} Delayed ({delay_rate:.1%})")
     print(f"Naive Zero-Intelligence Majority Baseline Accuracy: {dummy_majority_accuracy:.2%}")
 
-    # Defensible train/test split with stratification when class balance allows
-    can_stratify = min(on_time_count, delayed_count) >= 2 and len(df_feat) >= 10
-    strat = y_target if can_stratify else None
-    test_ratio = 0.20 if len(df_feat) >= 10 else 0.50
+    if on_time_count == 0 or delayed_count == 0:
+        raise ValueError(
+            f"Single-class dataset detected ({on_time_count} On-Time, {delayed_count} Delayed). "
+            f"Binary classification requires examples from both classes."
+        )
 
-    train_df, test_df, y_train, y_test = train_test_split(
-        df_feat, y_target, test_size=test_ratio, random_state=42, stratify=strat
-    )
+    # Train/test split strategy: Chronological when flight_date is available and varied, else Stratified
+    has_date_series = "flight_date" in df_feat.columns and df_feat["flight_date"].nunique() > 2
+    if has_date_series:
+        df_feat = df_feat.sort_values(by="flight_date").reset_index(drop=True)
+        split_idx = int(len(df_feat) * 0.80)
+        train_df = df_feat.iloc[:split_idx].copy()
+        test_df = df_feat.iloc[split_idx:].copy()
+        y_train = train_df["is_delayed"]
+        y_test = test_df["is_delayed"]
+        split_method = "Chronological 80/20 Holdout Split (sorted by flight_date)"
+    else:
+        can_stratify = min(on_time_count, delayed_count) >= 2 and len(df_feat) >= 10
+        strat = y_target if can_stratify else None
+        test_ratio = 0.20 if len(df_feat) >= 10 else 0.50
+        train_df, test_df, y_train, y_test = train_test_split(
+            df_feat, y_target, test_size=test_ratio, random_state=42, stratify=strat
+        )
+        split_method = "80/20 Stratified Holdout Split (random_state=42)"
+
+    print(f"Split Method: {split_method}")
     print(f"Train split: {len(train_df)} rows | Test split: {len(test_df)} rows")
 
     # =========================================================================
@@ -143,7 +207,7 @@ def train_and_compare_models(
     print("\n[1/3] Training Baseline Linear Classifier (Logistic Regression)...")
     baseline_clf = LogisticRegression(class_weight="balanced", max_iter=1000, random_state=42)
     baseline_pipeline = Pipeline(steps=[
-        ("preprocessor", build_preprocessor()),
+        ("preprocessor", build_preprocessor(task=task_enum)),
         ("classifier", baseline_clf)
     ])
     baseline_pipeline.fit(train_df, y_train)
@@ -164,7 +228,7 @@ def train_and_compare_models(
         random_state=42
     )
     candidate_pipeline = Pipeline(steps=[
-        ("preprocessor", build_preprocessor()),
+        ("preprocessor", build_preprocessor(task=task_enum)),
         ("classifier", candidate_clf)
     ])
     candidate_pipeline.fit(train_df, y_train)
@@ -179,13 +243,22 @@ def train_and_compare_models(
     print("\n[3/3] Training Delay Duration Regressor (RandomForest)...")
     regressor = RandomForestRegressor(n_estimators=100, max_depth=8, random_state=42, n_jobs=-1)
     reg_pipeline = Pipeline(steps=[
-        ("preprocessor", build_preprocessor()),
+        ("preprocessor", build_preprocessor(task=task_enum)),
         ("regressor", regressor)
     ])
-    y_reg_train = train_df["arr_delay_minutes"] if "arr_delay_minutes" in train_df.columns else pd.Series(np.zeros(len(train_df)))
-    y_reg_test = test_df["arr_delay_minutes"] if "arr_delay_minutes" in test_df.columns else pd.Series(np.zeros(len(test_df)))
-    reg_pipeline.fit(train_df, y_reg_train)
+    
+    # Select continuous target (arr_delay_minutes or dep_delay_minutes)
+    if "departure" in task.lower() and "dep_delay_minutes" in train_df.columns:
+        y_reg_train = train_df["dep_delay_minutes"]
+        y_reg_test = test_df["dep_delay_minutes"]
+    elif "arr_delay_minutes" in train_df.columns:
+        y_reg_train = train_df["arr_delay_minutes"]
+        y_reg_test = test_df["arr_delay_minutes"]
+    else:
+        y_reg_train = train_df["is_delayed"].astype(float) * 25.0
+        y_reg_test = test_df["is_delayed"].astype(float) * 25.0
 
+    reg_pipeline.fit(train_df, y_reg_train)
     y_pred_reg = reg_pipeline.predict(test_df)
     mae = float(mean_absolute_error(y_reg_test, y_pred_reg))
     rmse = float(np.sqrt(mean_squared_error(y_reg_test, y_pred_reg)))
@@ -215,7 +288,7 @@ def train_and_compare_models(
         raw_scores = perm_importance.importances_mean[:len(feature_labels)]
     except Exception:
         raw_scores = np.ones(len(feature_labels)) * 0.10
-    # Normalize to 100%
+    
     pos_scores = np.clip(raw_scores, 0.001, None)
     pcts = (pos_scores / pos_scores.sum())
     feature_importances = [
@@ -233,9 +306,7 @@ def train_and_compare_models(
     joblib.dump(candidate_pipeline, candidate_path)
     joblib.dump(reg_pipeline, regressor_path)
 
-    # Honest Empirical Model Selection
-    # For flight delay intelligence, detecting disruptions (Recall & discriminatory power ROC-AUC)
-    # takes precedence over naive majority-class guessing
+    # Empirical Model Selection
     if baseline_eval["roc_auc"] >= candidate_eval["roc_auc"]:
         selected_model_key = "baseline"
         selected_model_name = "Logistic Regression (Linear Baseline)"
@@ -246,10 +317,9 @@ def train_and_compare_models(
             f"(ROC-AUC: {baseline_eval['roc_auc']:.4f} vs {candidate_eval['roc_auc']:.4f}, "
             f"F1-score: {baseline_eval['f1_score']:.4f} vs {candidate_eval['f1_score']:.4f}, "
             f"Recall: {baseline_eval['recall']:.2%} vs {candidate_eval['recall']:.2%}). "
-            f"HistGradientBoosting achieved higher raw accuracy ({candidate_eval['accuracy']:.2%} vs {baseline_eval['accuracy']:.2%}) "
-            f"solely by overpredicting the dominant On-Time class, while missing {candidate_eval['confusion_matrix']['false_negative']} "
-            f"actual disruptions. In flight dispatch operations, missing delays causes costly gate conflicts, "
-            f"so high recall and calibrated probabilities are prioritized."
+            f"HistGradientBoosting achieved raw accuracy of {candidate_eval['accuracy']:.2%} "
+            f"partially by leaning into the dominant On-Time class, while missing {candidate_eval['confusion_matrix']['false_negative']} "
+            f"actual disruptions. In flight dispatch operations, high recall protects against unmitigated gate holds."
         )
     else:
         selected_model_key = "candidate"
@@ -258,17 +328,18 @@ def train_and_compare_models(
         selected_pipeline = candidate_pipeline
         selection_rationale = f"HistGradientBoosting is selected based on superior ROC-AUC ({candidate_eval['roc_auc']:.4f})."
 
-    # Save the selected winning pipeline to default MODEL_PATH
+    # Save selected pipeline to default MODEL_PATH
     joblib.dump(selected_pipeline, settings.MODEL_PATH)
 
-    # Determine dataset provenance & date range
+    # Dataset provenance & date range
     is_real = bool(
         "dataset_label" in raw_df.columns and
-        (raw_df["dataset_label"] == "HISTORICAL_INGESTED").any()
+        (raw_df["dataset_label"].str.contains("HISTORICAL|BTS", na=False)).any() and
+        not (raw_df["dataset_label"].str.contains("SYNTHETIC|BENCHMARK", na=False)).any()
     )
     dataset_source = (
-        "U.S. DOT BTS TranStats Historical Ingested" if is_real
-        else "DEMO BENCHMARK DATASET (CALIBRATED SYNTHETIC)"
+        "U.S. DOT BTS TranStats Historical Records" if is_real
+        else "Calibrated Aviation Benchmark Dataset (Synthetic Sample)"
     )
     min_date = str(raw_df["flight_date"].min()) if "flight_date" in raw_df.columns and not raw_df["flight_date"].dropna().empty else "2024-06-01"
     max_date = str(raw_df["flight_date"].max()) if "flight_date" in raw_df.columns and not raw_df["flight_date"].dropna().empty else "2024-06-30"
@@ -276,6 +347,7 @@ def train_and_compare_models(
     # Full comparative metadata report
     comparison_report = {
         "timestamp": pd.Timestamp.now().isoformat(),
+        "task": task_enum.value,
         "delay_threshold_minutes": delay_threshold_minutes,
         "dataset_source": dataset_source,
         "is_real_data": is_real,
@@ -287,7 +359,8 @@ def train_and_compare_models(
         "dataset_size": len(raw_df),
         "train_samples": len(train_df),
         "test_samples": len(test_df),
-        "split_method": "80/20 Stratified Holdout Split (random_state=42)",
+        "split_method": split_method,
+        "selected_features": PRE_DEPARTURE_NUMERIC_FEATURES + PRE_DEPARTURE_CATEGORICAL_FEATURES,
         "metrics_used": [
             "accuracy",
             "precision",
@@ -295,7 +368,9 @@ def train_and_compare_models(
             "f1_score",
             "roc_auc",
             "pr_auc",
-            "confusion_matrix"
+            "confusion_matrix",
+            "mae",
+            "rmse"
         ],
         "class_distribution": {
             "on_time_count": on_time_count,
@@ -320,7 +395,7 @@ def train_and_compare_models(
             "type": "Non-Linear Ensemble",
             "is_selected": bool(selected_model_key == "candidate"),
             "pros": "Capable of capturing non-linear cross-interactions and threshold splits",
-            "cons": "Prone to severe overfitting on small training samples (100% train accuracy), drifting toward dominant class with low recall"
+            "cons": "Prone to severe overfitting on small training samples, drifting toward dominant class with low recall"
         },
         "regression": {
             "mae_minutes": round(mae, 2),
@@ -352,7 +427,8 @@ def train_and_compare_models(
     legacy_metadata = {
         "model_type": selected_model_name,
         "model_version": "1.0.0-selected",
-        "dataset_type": "FAA/BTS Historical Benchmark",
+        "task": task_enum.value,
+        "dataset_type": dataset_source,
         "delay_threshold_minutes": delay_threshold_minutes,
         "train_samples": len(train_df),
         "test_samples": len(test_df),
@@ -378,7 +454,7 @@ def train_and_compare_models(
             "is_mock": False,
             "selected_model": selected_model_name,
             "selection_rationale": selection_rationale,
-            "notes": "Logistic Regression empirically selected over HistGradientBoosting based on held-out test ROC-AUC and Recall."
+            "notes": "Logistic Regression empirically selected based on held-out test ROC-AUC and Recall."
         }
     }
     with open(settings.METRICS_PATH, "w") as f:
@@ -392,6 +468,6 @@ def train_and_compare_models(
     print("=" * 65)
     return comparison_report
 
+
 if __name__ == "__main__":
     train_and_compare_models()
-

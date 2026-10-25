@@ -197,10 +197,21 @@ export interface ModelClassificationMetrics {
 
 export interface ModelComparisonData {
   timestamp: string;
+  task?: string;
   delay_threshold_minutes: number;
+  dataset_source?: string;
+  is_real_data?: boolean;
+  date_range?: {
+    min_date: string;
+    max_date: string;
+  };
   dataset_size: number;
+  sample_size?: number;
   train_samples: number;
   test_samples: number;
+  split_method?: string;
+  selected_features?: string[];
+  metrics_used?: string[];
   class_distribution: {
     on_time_count: number;
     delayed_count: number;

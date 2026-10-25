@@ -9,7 +9,7 @@ def get_model_evaluation():
     try:
         metrics = model_service.evaluation_metrics
         if not metrics:
-            comparison = train_and_compare_models()
+            train_and_compare_models()
             model_service._load_artifacts()
             metrics = model_service.evaluation_metrics
 
@@ -34,6 +34,7 @@ def retrain_model():
     try:
         payload = request.get_json(force=True, silent=True) or {}
         raw_threshold = payload.get("delay_threshold_minutes", 15)
+        task = payload.get("task", "arrival_delay_classification")
         try:
             delay_threshold = int(raw_threshold)
             if not (5 <= delay_threshold <= 120):
@@ -47,13 +48,15 @@ def retrain_model():
                 "error": f"Invalid delay threshold '{raw_threshold}'. Must be an integer between 5 and 120."
             }), 400
 
-        comparison = train_and_compare_models(delay_threshold_minutes=delay_threshold)
+        comparison = train_and_compare_models(delay_threshold_minutes=delay_threshold, task=task)
         model_service._load_artifacts()
 
         return jsonify({
             "success": True,
-            "message": f"Models retrained successfully with {delay_threshold}-minute lateness threshold.",
+            "message": f"Models retrained successfully for task '{task}' with {delay_threshold}-minute lateness threshold.",
             "data": comparison
         })
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500

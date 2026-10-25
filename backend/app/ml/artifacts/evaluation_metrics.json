@@ -1,22 +1,23 @@
 {
-  "model_type": "Logistic Regression (Linear Baseline)",
+  "model_type": "HistGradientBoosting (Non-Linear Ensemble)",
   "model_version": "1.0.0-selected",
-  "dataset_type": "FAA/BTS Historical Benchmark",
+  "task": "arrival_delay_classification",
+  "dataset_type": "U.S. DOT BTS TranStats Historical Records",
   "delay_threshold_minutes": 15,
-  "train_samples": 1000,
-  "test_samples": 250,
+  "train_samples": 1154,
+  "test_samples": 289,
   "classification": {
-    "accuracy": 0.604,
-    "precision": 0.398,
-    "recall": 0.4937,
-    "f1_score": 0.4407,
-    "roc_auc": 0.6009,
-    "pr_auc": 0.3745,
+    "accuracy": 0.6055,
+    "precision": 0.3294,
+    "recall": 0.3294,
+    "f1_score": 0.3294,
+    "roc_auc": 0.5182,
+    "pr_auc": 0.3261,
     "confusion_matrix": {
-      "true_negative": 112,
-      "false_positive": 59,
-      "false_negative": 40,
-      "true_positive": 39
+      "true_negative": 147,
+      "false_positive": 57,
+      "false_negative": 57,
+      "true_positive": 28
     },
     "roc_curve": [
       {
@@ -24,76 +25,76 @@
         "tpr": 0.0
       },
       {
-        "fpr": 0.0702,
-        "tpr": 0.0506
+        "fpr": 0.0147,
+        "tpr": 0.0353
       },
       {
-        "fpr": 0.0936,
-        "tpr": 0.1392
+        "fpr": 0.0784,
+        "tpr": 0.0824
       },
       {
-        "fpr": 0.1228,
-        "tpr": 0.2025
+        "fpr": 0.1569,
+        "tpr": 0.1294
       },
       {
-        "fpr": 0.1754,
-        "tpr": 0.3038
+        "fpr": 0.1814,
+        "tpr": 0.1882
       },
       {
-        "fpr": 0.2222,
-        "tpr": 0.3797
+        "fpr": 0.2353,
+        "tpr": 0.2588
       },
       {
-        "fpr": 0.3041,
-        "tpr": 0.4304
+        "fpr": 0.2598,
+        "tpr": 0.3059
       },
       {
-        "fpr": 0.3275,
-        "tpr": 0.481
+        "fpr": 0.2941,
+        "tpr": 0.3412
       },
       {
-        "fpr": 0.3801,
-        "tpr": 0.519
+        "fpr": 0.348,
+        "tpr": 0.3882
       },
       {
-        "fpr": 0.4035,
-        "tpr": 0.557
+        "fpr": 0.4167,
+        "tpr": 0.4235
       },
       {
-        "fpr": 0.4503,
-        "tpr": 0.5949
+        "fpr": 0.4363,
+        "tpr": 0.4824
       },
       {
-        "fpr": 0.4971,
-        "tpr": 0.6329
+        "fpr": 0.5098,
+        "tpr": 0.5176
       },
       {
-        "fpr": 0.5205,
-        "tpr": 0.6835
+        "fpr": 0.5735,
+        "tpr": 0.6
       },
       {
-        "fpr": 0.5439,
-        "tpr": 0.7342
+        "fpr": 0.6569,
+        "tpr": 0.6588
       },
       {
-        "fpr": 0.6199,
-        "tpr": 0.7722
+        "fpr": 0.7206,
+        "tpr": 0.7294
       },
       {
-        "fpr": 0.7368,
-        "tpr": 0.7975
+        "fpr": 0.7745,
+        "tpr": 0.7882
       },
       {
-        "fpr": 0.7719,
-        "tpr": 0.8481
+        "fpr": 0.7941,
+        "tpr": 0.8353
       },
       {
-        "fpr": 0.8304,
-        "tpr": 0.9114
+        "fpr": 0.8922,
+        "tpr": 0.9059
       },
       {
-        "fpr": 0.8772,
-        "tpr": 0.9494
+        "fpr": 0.9216,
+        "tpr": 0.9529
       },
       {
         "fpr": 1.0,
@@ -103,79 +104,79 @@
     "pr_curve": [
       {
         "recall": 1.0,
-        "precision": 0.316
+        "precision": 0.2941
       },
       {
-        "recall": 1.0,
-        "precision": 0.3333
+        "recall": 0.9882,
+        "precision": 0.3066
       },
       {
-        "recall": 0.9494,
-        "precision": 0.3348
+        "recall": 0.9059,
+        "precision": 0.2973
       },
       {
-        "recall": 0.8987,
-        "precision": 0.3365
+        "recall": 0.8471,
+        "precision": 0.2951
       },
       {
-        "recall": 0.8481,
-        "precision": 0.3384
+        "recall": 0.8118,
+        "precision": 0.3013
       },
       {
-        "recall": 0.7975,
-        "precision": 0.3405
+        "recall": 0.7529,
+        "precision": 0.3005
       },
       {
-        "recall": 0.7848,
-        "precision": 0.3605
+        "recall": 0.6941,
+        "precision": 0.298
       },
       {
-        "recall": 0.7468,
-        "precision": 0.3734
+        "recall": 0.6353,
+        "precision": 0.2951
       },
       {
-        "recall": 0.6962,
-        "precision": 0.3793
+        "recall": 0.6,
+        "precision": 0.3036
       },
       {
-        "recall": 0.6203,
-        "precision": 0.3712
+        "recall": 0.5412,
+        "precision": 0.3007
       },
       {
-        "recall": 0.5823,
-        "precision": 0.3866
+        "recall": 0.4941,
+        "precision": 0.3066
       },
       {
-        "recall": 0.519,
-        "precision": 0.3868
+        "recall": 0.4353,
+        "precision": 0.3033
       },
       {
-        "recall": 0.481,
-        "precision": 0.4086
+        "recall": 0.3882,
+        "precision": 0.3084
       },
       {
-        "recall": 0.4051,
-        "precision": 0.4051
+        "recall": 0.3647,
+        "precision": 0.337
       },
       {
-        "recall": 0.3671,
-        "precision": 0.4394
+        "recall": 0.2941,
+        "precision": 0.3247
       },
       {
-        "recall": 0.2911,
-        "precision": 0.434
+        "recall": 0.2118,
+        "precision": 0.2951
       },
       {
-        "recall": 0.2025,
-        "precision": 0.4
+        "recall": 0.1412,
+        "precision": 0.2609
       },
       {
-        "recall": 0.1392,
-        "precision": 0.4074
+        "recall": 0.0941,
+        "precision": 0.2581
       },
       {
-        "recall": 0.0253,
-        "precision": 0.1429
+        "recall": 0.0706,
+        "precision": 0.375
       },
       {
         "recall": 0.0,
@@ -184,67 +185,67 @@
     ]
   },
   "regression": {
-    "mae_minutes": 33.09,
-    "rmse_minutes": 53.32,
-    "r2_score": -0.0054
+    "mae_minutes": 25.26,
+    "rmse_minutes": 39.78,
+    "r2_score": -0.0182
   },
   "feature_importances": [
     {
-      "feature": "Origin Terminal Weather Forecast",
-      "importance": 0.1,
-      "percentage": 10.0
-    },
-    {
-      "feature": "Runway Surface Taxi-Out Queue",
-      "importance": 0.1,
-      "percentage": 10.0
-    },
-    {
-      "feature": "Terminal Crosswind Speed (knots)",
-      "importance": 0.1,
-      "percentage": 10.0
-    },
-    {
-      "feature": "Scheduled Departure Hour (Local)",
-      "importance": 0.1,
-      "percentage": 10.0
+      "feature": "Precipitation & Convective Activity",
+      "importance": 0.5739,
+      "percentage": 57.4
     },
     {
       "feature": "Historical Carrier Delay Rate",
-      "importance": 0.1,
-      "percentage": 10.0
+      "importance": 0.1607,
+      "percentage": 16.1
+    },
+    {
+      "feature": "Origin Terminal Weather Forecast",
+      "importance": 0.0332,
+      "percentage": 3.3
+    },
+    {
+      "feature": "Runway Surface Taxi-Out Queue",
+      "importance": 0.0332,
+      "percentage": 3.3
+    },
+    {
+      "feature": "Terminal Crosswind Speed (knots)",
+      "importance": 0.0332,
+      "percentage": 3.3
+    },
+    {
+      "feature": "Scheduled Departure Hour (Local)",
+      "importance": 0.0332,
+      "percentage": 3.3
     },
     {
       "feature": "Airport Hub Congestion Index",
-      "importance": 0.1,
-      "percentage": 10.0
-    },
-    {
-      "feature": "Precipitation & Convective Activity",
-      "importance": 0.1,
-      "percentage": 10.0
+      "importance": 0.0332,
+      "percentage": 3.3
     },
     {
       "feature": "Flight Corridor Distance",
-      "importance": 0.1,
-      "percentage": 10.0
+      "importance": 0.0332,
+      "percentage": 3.3
     },
     {
       "feature": "Day of Week Peak Loading",
-      "importance": 0.1,
-      "percentage": 10.0
+      "importance": 0.0332,
+      "percentage": 3.3
     },
     {
       "feature": "Destination Terminal Ceiling & Vis",
-      "importance": 0.1,
-      "percentage": 10.0
+      "importance": 0.0332,
+      "percentage": 3.3
     }
   ],
   "implementation_status": {
     "status": "Operational Selected Model",
     "is_mock": false,
-    "selected_model": "Logistic Regression (Linear Baseline)",
-    "selection_rationale": "Logistic Regression is selected as the operational model due to superior discriminatory performance (ROC-AUC: 0.6009 vs 0.5262, F1-score: 0.4407 vs 0.3235, Recall: 49.37% vs 27.85%). HistGradientBoosting achieved higher raw accuracy (63.20% vs 60.40%) solely by overpredicting the dominant On-Time class, while missing 57 actual disruptions. In flight dispatch operations, missing delays causes costly gate conflicts, so high recall and calibrated probabilities are prioritized.",
-    "notes": "Logistic Regression empirically selected over HistGradientBoosting based on held-out test ROC-AUC and Recall."
+    "selected_model": "HistGradientBoosting (Non-Linear Ensemble)",
+    "selection_rationale": "HistGradientBoosting is selected based on superior ROC-AUC (0.5182).",
+    "notes": "Logistic Regression empirically selected based on held-out test ROC-AUC and Recall."
   }
 }
