@@ -80,6 +80,21 @@ class AviationApiTestCase(unittest.TestCase):
         data = json.loads(res.data)
         self.assertFalse(data["success"])
 
+        # Invalid departure hour
+        res_hour = self.client.post("/api/predict/flight", json={"dep_hour": 99, "origin": "ATL", "dest": "LAX"})
+        self.assertEqual(res_hour.status_code, 400)
+        self.assertIn("Departure hour must be between 0 and 23", json.loads(res_hour.data)["error"])
+
+        # Identical origin and destination
+        res_route = self.client.post("/api/predict/flight", json={"origin": "ORD", "dest": "ORD"})
+        self.assertEqual(res_route.status_code, 400)
+        self.assertIn("cannot be identical", json.loads(res_route.data)["error"])
+
+        # Negative distance
+        res_dist = self.client.post("/api/predict/flight", json={"distance_miles": -100})
+        self.assertEqual(res_dist.status_code, 400)
+        self.assertIn("greater than 0", json.loads(res_dist.data)["error"])
+
         # Upload without file
         res_upload = self.client.post("/api/data/upload")
         self.assertEqual(res_upload.status_code, 400)
@@ -89,6 +104,11 @@ class AviationApiTestCase(unittest.TestCase):
         # Non-existent file ingestion
         res_ingest = self.client.post("/api/data/ingest", json={"file_name": "non_existent_file.csv"})
         self.assertEqual(res_ingest.status_code, 404)
+
+        # Invalid retrain delay threshold
+        res_retrain_inv = self.client.post("/api/model/retrain", json={"delay_threshold_minutes": -5})
+        self.assertEqual(res_retrain_inv.status_code, 400)
+        self.assertIn("between 5 and 120", json.loads(res_retrain_inv.data)["error"])
 
     def test_08_data_management_and_quality(self):
         """Verifies data status and quality report endpoints."""

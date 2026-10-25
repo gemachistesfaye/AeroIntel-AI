@@ -114,16 +114,30 @@ class EndToEndUserJourneyVerification(unittest.TestCase):
         self.assertIn("expected_delay_minutes", pred)
         print(f"  -> Delay Probability: {pred['delay_probability_pct']}% | Risk Tier: {pred['risk_tier']} | Expected Delay: +{pred['expected_delay_minutes']}m")
 
-        # Step 8: View the explanation for the prediction
-        print("\n[Step 8] Inspecting Transparent Feature Attributions & Causality Disclaimer...")
+        # Step 8: Submit invalid prediction inputs and confirm appropriate errors
+        print("\n[Step 8] Submitting Invalid Prediction Inputs & Confirming Error Handling...")
+        # Invalid departure hour (99)
+        res_bad_hour = self.client.post("/api/predict/flight", json={"dep_hour": 99, "origin": "ATL", "dest": "LAX"})
+        self.assertEqual(res_bad_hour.status_code, 400)
+        bad_hour_json = json.loads(res_bad_hour.data)
+        self.assertFalse(bad_hour_json["success"])
+        self.assertIn("Departure hour must be between 0 and 23", bad_hour_json["error"])
+        print("  -> Passed: Invalid departure hour correctly rejected with 400 Bad Request.")
+
+        # Identical origin and destination (SFO -> SFO)
+        res_bad_route = self.client.post("/api/predict/flight", json={"origin": "SFO", "dest": "SFO"})
+        self.assertEqual(res_bad_route.status_code, 400)
+        bad_route_json = json.loads(res_bad_route.data)
+        self.assertFalse(bad_route_json["success"])
+        self.assertIn("cannot be identical", bad_route_json["error"])
+        print("  -> Passed: Identical origin and destination correctly rejected with 400 Bad Request.")
+
+        # Inspect explanation & causality disclaimer
         expl = pred_data["explanation"]
         self.assertIn("attributions", expl)
         self.assertIn("causality_disclaimer", expl)
         self.assertGreater(len(expl["attributions"]), 0)
-        print(f"  -> Attributions ({len(expl['attributions'])} factors):")
-        for attr in expl["attributions"]:
-            print(f"     * {attr['feature']}: {attr['impact_pct']:+.1f}% ({attr['direction']})")
-        print(f"  -> Causality Notice: {expl['causality_disclaimer'][:80]}...")
+        print(f"  -> Explanation verified: {len(expl['attributions'])} attributions analyzed with regulatory disclaimer.")
 
         # Step 9: Compare baseline and candidate models
         print("\n[Step 9] Comparing Baseline (LogisticRegression) vs Candidate (HistGradientBoosting)...")

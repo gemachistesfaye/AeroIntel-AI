@@ -98,24 +98,85 @@ class AviationModelService:
             version = "1.0.0-linear-baseline"
             resolved_type = "baseline"
 
-        # Sanitize and validate inputs
+        # Sanitize and validate inputs safely
+        origin = str(flight_input.get("origin") or "ATL").strip().upper()
+        dest = str(flight_input.get("dest") or "LAX").strip().upper()
+        if origin and dest and origin == dest:
+            raise ValueError(f"Origin and destination aerodromes cannot be identical ({origin}).")
+
+        # Validate dep_hour
+        raw_dep_hour = flight_input.get("dep_hour")
+        if raw_dep_hour is not None and str(raw_dep_hour).strip() != "":
+            try:
+                dep_hour = int(raw_dep_hour)
+                if not (0 <= dep_hour <= 23):
+                    raise ValueError(f"Departure hour must be between 0 and 23 (received {dep_hour}).")
+            except (ValueError, TypeError) as e:
+                if "between 0 and 23" in str(e):
+                    raise
+                raise ValueError(f"Invalid departure hour '{raw_dep_hour}'. Must be an integer between 0 and 23.")
+        else:
+            dep_hour = 14
+
+        # Validate distance_miles
+        raw_distance = flight_input.get("distance_miles")
+        if raw_distance is not None and str(raw_distance).strip() != "":
+            try:
+                distance_miles = float(raw_distance)
+                if distance_miles <= 0:
+                    raise ValueError(f"Distance must be greater than 0 miles (received {distance_miles}).")
+            except (ValueError, TypeError) as e:
+                if "greater than 0" in str(e):
+                    raise
+                raise ValueError(f"Invalid distance '{raw_distance}'. Must be a positive number.")
+        else:
+            distance_miles = 1200.0
+
+        # Validate taxi_out_minutes
+        raw_taxi = flight_input.get("taxi_out_minutes")
+        if raw_taxi is not None and str(raw_taxi).strip() != "":
+            try:
+                taxi_out_minutes = float(raw_taxi)
+                if taxi_out_minutes < 0:
+                    raise ValueError(f"Taxi-out time cannot be negative (received {taxi_out_minutes}).")
+            except (ValueError, TypeError) as e:
+                if "cannot be negative" in str(e):
+                    raise
+                raise ValueError(f"Invalid taxi-out minutes '{raw_taxi}'. Must be a non-negative number.")
+        else:
+            taxi_out_minutes = 16.0
+
+        # Validate wind_speed_knots
+        raw_wind = flight_input.get("wind_speed_knots")
+        if raw_wind is not None and str(raw_wind).strip() != "":
+            try:
+                wind_speed_knots = float(raw_wind)
+                if wind_speed_knots < 0:
+                    raise ValueError(f"Wind speed cannot be negative (received {wind_speed_knots}).")
+            except (ValueError, TypeError) as e:
+                if "cannot be negative" in str(e):
+                    raise
+                raise ValueError(f"Invalid wind speed '{raw_wind}'. Must be a non-negative number.")
+        else:
+            wind_speed_knots = 12.0
+
         raw_dict = {
-            "carrier_code": str(flight_input.get("carrier_code", "DL")).strip().upper(),
-            "origin": str(flight_input.get("origin", "ATL")).strip().upper(),
-            "dest": str(flight_input.get("dest", "LAX")).strip().upper(),
-            "dep_hour": int(flight_input.get("dep_hour", 14)),
-            "dep_minute": int(flight_input.get("dep_minute", 0)),
-            "day_of_week": int(flight_input.get("day_of_week", 2)),
-            "month": int(flight_input.get("month", 6)),
-            "distance_miles": float(flight_input.get("distance_miles", 1200.0)),
-            "taxi_out_minutes": float(flight_input.get("taxi_out_minutes", 16.0)),
-            "origin_weather": str(flight_input.get("origin_weather", "Clear")).strip(),
-            "dest_weather": str(flight_input.get("dest_weather", "Clear")).strip(),
-            "wind_speed_knots": float(flight_input.get("wind_speed_knots", 12.0)),
-            "visibility_miles": float(flight_input.get("visibility_miles", 10.0)),
-            "precipitation_mm": float(flight_input.get("precipitation_mm", 0.0)),
-            "congestion_level": str(flight_input.get("congestion_level", "Moderate")).strip(),
-            "historical_carrier_delay_rate": float(flight_input.get("historical_carrier_delay_rate", 0.20))
+            "carrier_code": str(flight_input.get("carrier_code") or "DL").strip().upper(),
+            "origin": origin,
+            "dest": dest,
+            "dep_hour": dep_hour,
+            "dep_minute": int(flight_input.get("dep_minute") or 0) if str(flight_input.get("dep_minute", "")).isdigit() else 0,
+            "day_of_week": int(flight_input.get("day_of_week") or 2) if str(flight_input.get("day_of_week", "")).isdigit() else 2,
+            "month": int(flight_input.get("month") or 6) if str(flight_input.get("month", "")).isdigit() else 6,
+            "distance_miles": distance_miles,
+            "taxi_out_minutes": taxi_out_minutes,
+            "origin_weather": str(flight_input.get("origin_weather") or "Clear").strip(),
+            "dest_weather": str(flight_input.get("dest_weather") or "Clear").strip(),
+            "wind_speed_knots": wind_speed_knots,
+            "visibility_miles": float(flight_input.get("visibility_miles") or 10.0),
+            "precipitation_mm": float(flight_input.get("precipitation_mm") or 0.0),
+            "congestion_level": str(flight_input.get("congestion_level") or "Moderate").strip(),
+            "historical_carrier_delay_rate": float(flight_input.get("historical_carrier_delay_rate") or 0.20)
         }
 
         # Convert to DataFrame and apply feature engineering

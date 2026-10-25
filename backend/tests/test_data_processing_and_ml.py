@@ -208,5 +208,40 @@ class DataProcessingAndMLExhaustiveTests(unittest.TestCase):
         data_reset = json.loads(res_reset.data)
         self.assertEqual(data_reset["data"]["delay_threshold_minutes"], 15)
 
+    def test_11_input_resilience_and_probability_bounds(self):
+        """Verifies prediction probabilities remain strictly bounded in [0, 1] and handles missing/unexpected features."""
+        # Test extreme severe conditions
+        severe_input = {
+            "carrier_code": "DL", "origin": "ATL", "dest": "ORD",
+            "dep_hour": 18, "origin_weather": "Thunderstorm",
+            "wind_speed_knots": 45.0, "taxi_out_minutes": 50.0,
+            "congestion_level": "Severe", "unexpected_extra_param": "should_be_ignored"
+        }
+        res_severe = self.client.post("/api/predict/flight", json=severe_input)
+        self.assertEqual(res_severe.status_code, 200)
+        prob_severe = json.loads(res_severe.data)["data"]["prediction"]["delay_probability"]
+        self.assertTrue(0.0 <= prob_severe <= 1.0, f"Probability out of bounds: {prob_severe}")
+        self.assertGreater(prob_severe, 0.40)
+
+        # Test benign calm conditions
+        calm_input = {
+            "carrier_code": "UA", "origin": "DEN", "dest": "SFO",
+            "dep_hour": 8, "origin_weather": "Clear",
+            "wind_speed_knots": 4.0, "taxi_out_minutes": 10.0,
+            "congestion_level": "Low"
+        }
+        res_calm = self.client.post("/api/predict/flight", json=calm_input)
+        self.assertEqual(res_calm.status_code, 200)
+        prob_calm = json.loads(res_calm.data)["data"]["prediction"]["delay_probability"]
+        self.assertTrue(0.0 <= prob_calm <= 1.0, f"Probability out of bounds: {prob_calm}")
+        self.assertLess(prob_calm, prob_severe)
+
+        # Test minimal payload with missing/None optional fields
+        sparse_input = {"origin": "JFK", "dest": "MIA", "dep_hour": None, "wind_speed_knots": None}
+        res_sparse = self.client.post("/api/predict/flight", json=sparse_input)
+        self.assertEqual(res_sparse.status_code, 200)
+        prob_sparse = json.loads(res_sparse.data)["data"]["prediction"]["delay_probability"]
+        self.assertTrue(0.0 <= prob_sparse <= 1.0)
+
 if __name__ == "__main__":
     unittest.main()

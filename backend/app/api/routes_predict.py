@@ -16,6 +16,8 @@ def predict_flight():
         model_type = payload.get("model_type", "baseline")
         result = model_service.predict_flight_delay(payload, model_type=model_type)
         return jsonify({"success": True, "data": result})
+    except (ValueError, TypeError) as e:
+        return jsonify({"success": False, "error": f"Invalid flight parameters: {str(e)}"}), 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 

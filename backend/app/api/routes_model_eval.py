@@ -33,7 +33,19 @@ def get_model_comparison():
 def retrain_model():
     try:
         payload = request.get_json(force=True, silent=True) or {}
-        delay_threshold = int(payload.get("delay_threshold_minutes", 15))
+        raw_threshold = payload.get("delay_threshold_minutes", 15)
+        try:
+            delay_threshold = int(raw_threshold)
+            if not (5 <= delay_threshold <= 120):
+                return jsonify({
+                    "success": False,
+                    "error": f"Delay threshold must be between 5 and 120 minutes (received {delay_threshold})."
+                }), 400
+        except (ValueError, TypeError):
+            return jsonify({
+                "success": False,
+                "error": f"Invalid delay threshold '{raw_threshold}'. Must be an integer between 5 and 120."
+            }), 400
 
         comparison = train_and_compare_models(delay_threshold_minutes=delay_threshold)
         model_service._load_artifacts()
