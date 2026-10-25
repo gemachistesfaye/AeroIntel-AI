@@ -107,7 +107,7 @@
   "has_delay_causes": false,
   "clean_features_count": 28,
   "processing_engine": "Pandas Memory-Optimized Ingestion Engine (Local 16GB RAM)",
-  "processing_duration_seconds": 0.763,
+  "processing_duration_seconds": 0.861,
   "class_distribution": {
     "on_time_count": 856,
     "delayed_count": 394,
