@@ -1,9 +1,26 @@
 {
-  "timestamp": "2026-10-25T14:39:27.553983",
+  "timestamp": "2026-10-25T15:14:46.655472",
   "delay_threshold_minutes": 15,
+  "dataset_source": "U.S. DOT BTS TranStats Historical Ingested",
+  "is_real_data": true,
+  "date_range": {
+    "min_date": "2024-01-01",
+    "max_date": "2024-01-01"
+  },
+  "sample_size": 1250,
   "dataset_size": 1250,
   "train_samples": 1000,
   "test_samples": 250,
+  "split_method": "80/20 Stratified Holdout Split (random_state=42)",
+  "metrics_used": [
+    "accuracy",
+    "precision",
+    "recall",
+    "f1_score",
+    "roc_auc",
+    "pr_auc",
+    "confusion_matrix"
+  ],
   "class_distribution": {
     "on_time_count": 856,
     "delayed_count": 394,

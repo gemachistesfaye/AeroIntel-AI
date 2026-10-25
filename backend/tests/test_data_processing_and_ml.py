@@ -243,5 +243,82 @@ class DataProcessingAndMLExhaustiveTests(unittest.TestCase):
         prob_sparse = json.loads(res_sparse.data)["data"]["prediction"]["delay_probability"]
         self.assertTrue(0.0 <= prob_sparse <= 1.0)
 
+    def test_12_bts_column_mapping_and_airport_id_resolution(self):
+        """Verifies configurable schema mapping for official BTS TranStats fields and numeric Airport IDs."""
+        bts_raw = pd.DataFrame([
+            {
+                "FL_DATE": "2024-05-12",
+                "OP_UNIQUE_CARRIER": "AA",
+                "OP_CARRIER_FL_NUM": "1234",
+                "ORIGIN_AIRPORT_ID": 10397, # ATL
+                "DEST_AIRPORT_ID": 13930,   # ORD
+                "CRS_DEP_TIME": 1430,      # Integer format 14:30
+                "DISTANCE": 606.0,
+                "ARR_DELAY": 22.0,
+                "WEATHER_DELAY": 15.0,
+                "NAS_DELAY": 7.0
+            }
+        ])
+        clean_df, report = self.pipeline.validate_and_clean(bts_raw, source_name="BTS Test")
+        self.assertEqual(report["valid_records"], 1)
+        row = clean_df.iloc[0]
+        self.assertEqual(row["origin"], "ATL")
+        self.assertEqual(row["dest"], "ORD")
+        self.assertEqual(row["dep_hour"], 14)
+        self.assertEqual(row["dep_minute"], 30)
+        self.assertEqual(row["arr_delay_minutes"], 22.0)
+        self.assertEqual(row["is_delayed"], 1)
+        self.assertEqual(row["delay_cause"], "Weather")
+
+    def test_13_cancellation_and_diversion_tracking(self):
+        """Verifies cancelled and diverted flights are tracked in profiling rather than marked as corrupt."""
+        mixed_data = pd.DataFrame([
+            {
+                "flight_id": "NORM1", "carrier_code": "DL", "origin": "ATL", "dest": "LAX",
+                "scheduled_dep_time": "10:00", "distance_miles": 1946.0, "arr_delay": 0.0,
+                "cancelled": 0, "diverted": 0
+            },
+            {
+                "flight_id": "CANC1", "carrier_code": "DL", "origin": "ATL", "dest": "LAX",
+                "scheduled_dep_time": "12:00", "distance_miles": 1946.0, "arr_delay": None,
+                "cancelled": 1, "diverted": 0 # Cancelled: no arr_delay
+            },
+            {
+                "flight_id": "DIV1", "carrier_code": "DL", "origin": "ATL", "dest": "LAX",
+                "scheduled_dep_time": "15:00", "distance_miles": 1946.0, "arr_delay": None,
+                "cancelled": 0, "diverted": 1 # Diverted: no arr_delay
+            }
+        ])
+        clean_df, report = self.pipeline.validate_and_clean(mixed_data, source_name="Cancellation Test")
+        self.assertEqual(report["total_input_records"], 3)
+        self.assertEqual(report["valid_records"], 1) # Only completed flight is ingested into delay predictor
+        self.assertEqual(report["cancellation_count"], 1)
+        self.assertEqual(report["diversion_count"], 1)
+        self.assertEqual(report["rejection_breakdown"]["cancelled_or_diverted_flight"], 2)
+
+    def test_14_large_file_chunked_profiling_and_bts_zip(self):
+        """Verifies streaming chunked profiling on large datasets and tests real BTS zip archive if present."""
+        zip_path = Path(__file__).resolve().parent.parent.parent / "T_ONTIME_REPORTING_20261025_074607.zip"
+        if zip_path.exists():
+            profile = self.pipeline.profile_dataset(zip_path)
+            self.assertEqual(profile["total_input_records"], 544003)
+            self.assertIn("ORIGIN_AIRPORT_ID", profile["columns_detected"])
+            self.assertGreater(profile["unique_origins_count"], 300)
+            self.assertIn("Pandas Streaming Chunk Engine", profile["processing_engine"])
+
+    def test_15_temporal_and_delay_causes_analytics(self):
+        """Verifies temporal delay breakdowns and delay cause availability reporting."""
+        res_temp = self.client.get("/api/analytics/temporal")
+        self.assertEqual(res_temp.status_code, 200)
+        temp_data = json.loads(res_temp.data)["data"]
+        self.assertIn("by_month", temp_data)
+        self.assertIn("by_weekday", temp_data)
+        self.assertIn("by_departure_hour", temp_data)
+
+        res_causes = self.client.get("/api/analytics/delay-causes")
+        self.assertEqual(res_causes.status_code, 200)
+        causes_data = json.loads(res_causes.data)["data"]
+        self.assertIn("has_delay_causes", causes_data)
+
 if __name__ == "__main__":
     unittest.main()

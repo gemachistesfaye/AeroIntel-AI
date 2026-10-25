@@ -22,9 +22,11 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Ingestion Uploads
+# Ingestion Uploads & Data Archives
 backend/app/data/uploads/*
 !backend/app/data/uploads/.gitkeep
+*.zip
+/T_ONTIME_REPORTING.csv
 
 # Environment & IDE
 .env

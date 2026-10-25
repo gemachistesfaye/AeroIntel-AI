@@ -38,12 +38,27 @@ LEAKAGE_BLOCKLIST = [
     "dep_delay",
     "actual_dep_time",
     "actual_arr_time",
+    "dep_time",
+    "arr_time",
     "air_time_minutes",
+    "air_time",
     "actual_elapsed_time",
     "delay_cause",
     "is_delayed",
     "delay_risk_tier",
-    "dataset_label"
+    "dataset_label",
+    "is_cancelled",
+    "cancelled",
+    "cancellation_code",
+    "is_diverted",
+    "diverted",
+    "carrier_delay",
+    "weather_delay",
+    "nas_delay",
+    "security_delay",
+    "late_aircraft_delay",
+    "taxi_in",
+    "taxi_in_minutes"
 ]
 
 def engineer_features(df: pd.DataFrame) -> pd.DataFrame:

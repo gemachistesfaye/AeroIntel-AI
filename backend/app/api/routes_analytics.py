@@ -10,15 +10,31 @@ def get_analytics_summary():
         carriers = analytics_processor.compute_carrier_benchmarks()
         corridors = analytics_processor.compute_corridor_analytics()
         hubs = analytics_processor.compute_hub_analytics()
+        causes = analytics_processor.compute_delay_causes_breakdown()
+        
+        # Calculate fleet-wide totals
+        df = analytics_processor.load_data()
+        total_records = len(df)
+        total_delayed = int((df["is_delayed"] == 1).sum()) if "is_delayed" in df.columns else 0
+        canc_count = int(df["is_cancelled"].astype(str).isin(["1", "1.0", "True"]).sum()) if "is_cancelled" in df.columns else 0
+        div_count = int(df["is_diverted"].astype(str).isin(["1", "1.0", "True"]).sum()) if "is_diverted" in df.columns else 0
+
         return jsonify({
             "success": True,
             "data": {
+                "total_records": total_records,
                 "total_carriers": len(carriers),
                 "total_corridors": len(corridors),
                 "total_hubs": len(hubs),
+                "on_time_rate_pct": round(((total_records - total_delayed) / total_records) * 100, 1) if total_records > 0 else 0.0,
+                "delay_rate_pct": round((total_delayed / total_records) * 100, 1) if total_records > 0 else 0.0,
+                "cancellation_rate_pct": round(canc_count / total_records * 100, 2) if total_records > 0 else 0.0,
+                "diversion_rate_pct": round(div_count / total_records * 100, 2) if total_records > 0 else 0.0,
+                "has_delay_causes": causes.get("has_delay_causes", False),
                 "top_carriers": carriers[:5],
                 "top_corridors": corridors[:5],
-                "top_congested_hubs": hubs[:5]
+                "top_congested_hubs": hubs[:5],
+                "processing_engine": "Pandas Memory-Optimized Engine"
             }
         })
     except Exception as e:
@@ -44,6 +60,24 @@ def get_corridor_analytics():
 def get_hub_analytics():
     try:
         data = analytics_processor.compute_hub_analytics()
+        return jsonify({"success": True, "data": data})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@bp.route("/temporal", methods=["GET"])
+def get_temporal_analytics():
+    """Returns historical delay trends partitioned by month, day of week, and departure hour."""
+    try:
+        data = analytics_processor.compute_temporal_analytics()
+        return jsonify({"success": True, "data": data})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@bp.route("/delay-causes", methods=["GET"])
+def get_delay_causes():
+    """Returns delay cause attribution breakdown only when delay cause columns are available."""
+    try:
+        data = analytics_processor.compute_delay_causes_breakdown()
         return jsonify({"success": True, "data": data})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -81,4 +115,3 @@ def get_spark_status():
         return jsonify({"success": True, "data": status})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-

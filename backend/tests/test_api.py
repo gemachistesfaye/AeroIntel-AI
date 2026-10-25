@@ -124,5 +124,20 @@ class AviationApiTestCase(unittest.TestCase):
         self.assertTrue(data_quality["success"])
         self.assertIn("valid_records", data_quality["data"])
 
+    def test_09_schema_mapping_and_temporal_apis(self):
+        """Verifies schema mapping inspection and temporal analytics APIs."""
+        res_map = self.client.get("/api/data/schema-mapping")
+        self.assertEqual(res_map.status_code, 200)
+        map_data = json.loads(res_map.data)
+        self.assertTrue(map_data["success"])
+        self.assertIn("standard_bts_mapping", map_data["data"])
+        self.assertIn("canonical_candidates", map_data["data"])
+
+        res_temp = self.client.get("/api/analytics/temporal")
+        self.assertEqual(res_temp.status_code, 200)
+        temp_data = json.loads(res_temp.data)
+        self.assertTrue(temp_data["success"])
+        self.assertIn("by_departure_hour", temp_data["data"])
+
 if __name__ == "__main__":
     unittest.main()

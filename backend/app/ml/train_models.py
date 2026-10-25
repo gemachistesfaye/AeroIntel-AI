@@ -261,13 +261,42 @@ def train_and_compare_models(
     # Save the selected winning pipeline to default MODEL_PATH
     joblib.dump(selected_pipeline, settings.MODEL_PATH)
 
+    # Determine dataset provenance & date range
+    is_real = bool(
+        "dataset_label" in raw_df.columns and
+        (raw_df["dataset_label"] == "HISTORICAL_INGESTED").any()
+    )
+    dataset_source = (
+        "U.S. DOT BTS TranStats Historical Ingested" if is_real
+        else "DEMO BENCHMARK DATASET (CALIBRATED SYNTHETIC)"
+    )
+    min_date = str(raw_df["flight_date"].min()) if "flight_date" in raw_df.columns and not raw_df["flight_date"].dropna().empty else "2024-06-01"
+    max_date = str(raw_df["flight_date"].max()) if "flight_date" in raw_df.columns and not raw_df["flight_date"].dropna().empty else "2024-06-30"
+
     # Full comparative metadata report
     comparison_report = {
         "timestamp": pd.Timestamp.now().isoformat(),
         "delay_threshold_minutes": delay_threshold_minutes,
+        "dataset_source": dataset_source,
+        "is_real_data": is_real,
+        "date_range": {
+            "min_date": min_date,
+            "max_date": max_date
+        },
+        "sample_size": len(raw_df),
         "dataset_size": len(raw_df),
         "train_samples": len(train_df),
         "test_samples": len(test_df),
+        "split_method": "80/20 Stratified Holdout Split (random_state=42)",
+        "metrics_used": [
+            "accuracy",
+            "precision",
+            "recall",
+            "f1_score",
+            "roc_auc",
+            "pr_auc",
+            "confusion_matrix"
+        ],
         "class_distribution": {
             "on_time_count": on_time_count,
             "delayed_count": delayed_count,

@@ -265,14 +265,37 @@ export interface DataQualityReport {
   total_input_records: number;
   valid_records: number;
   rejected_records: number;
+  skipped_records?: number;
   acceptance_rate_pct: number;
   rejection_breakdown: Record<string, number>;
+  rejection_reasons_explained?: Record<string, string>;
   clean_features_count: number;
   class_distribution: {
     on_time_count: number;
     delayed_count: number;
     delay_rate_pct: number;
   };
+  columns_detected?: string[];
+  columns_count?: number;
+  date_range?: {
+    min_date: string;
+    max_date: string;
+  };
+  missing_values_count?: number;
+  duplicate_rows_count?: number;
+  unique_airlines_count?: number;
+  unique_airlines?: string[];
+  unique_origins_count?: number;
+  unique_origins?: string[];
+  unique_dests_count?: number;
+  unique_dests?: string[];
+  cancellation_count?: number;
+  cancellation_rate_pct?: number;
+  diversion_count?: number;
+  diversion_rate_pct?: number;
+  has_delay_causes?: boolean;
+  processing_engine?: string;
+  processing_duration_seconds?: number;
 }
 
 export interface DataManagementInfo {
