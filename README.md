@@ -25,33 +25,36 @@ The platform models genuine physical and operational constraints: **runway cross
 | 🧠 **Predict Delay Engine** | Real-time ML simulator with **Model Toggle** (*Candidate HistGradientBoosting* vs *Baseline Logistic Regression*). Outputs probability, duration, confidence, and local feature attribution. |
 | 🧭 **Route Intelligence** | Air corridor monitoring with Congestion Index (0–100), punctuality tracking, top hub bottleneck analysis, and departure slot recommendations. |
 | 📊 **Model Comparison & Evaluation** | Transparent Machine Learning scorecard featuring side-by-side comparison between Baseline and Candidate models, confusion matrices, interactive dual ROC curves, Gini feature importances, and configurable delay threshold retraining. |
-| 🗄️ **Data Management & Ingestion** | **CSV Dataset Upload & Validation**, data quality audit (valid vs rejected records breakdown), 24-field schema inspector, and benchmark dataset synthesis controls. |
+| 🗄️ **Data Management & Ingestion** | **CSV & ZIP Dataset Upload & Validation**, configurable BTS TranStats schema mapping (with numeric Airport ID resolution), chunked profiling (>15 MB), data quality audit, and benchmark fixture activation. |
 
 ---
 
 ## 3. Honest Machine Learning & Model Selection
 
-- **Strict Zero Target Leakage**: Models use ONLY variables realistically available *before pushback* (`dep_hour`, `day_of_week`, `origin_weather`, `wind_speed_knots`, `taxi_out_minutes` scheduled buffer, `historical_carrier_delay_rate`, etc.). Future post-departure variables (`arr_delay_minutes`, `dep_delay_minutes`, `actual_dep_time`, `actual_arr_time`, `air_time_minutes`, `delay_cause`) are strictly excluded.
-- **Configurable Target Threshold**: Flight arrival delay is explicitly defined as `arr_delay_minutes >= 15` (FAA standard lateness threshold; dynamically re-trainable to 30 or 45 min).
-- **Reproducible Train/Test Split**: 80/20 train/test split with stratification on `random_state=42` (1,000 train rows, 250 held-out test rows).
-- **Preprocessing Fitted Only on Training Split**: Preprocessors (`StandardScaler`, `OneHotEncoder`) are fit strictly inside `Pipeline` on the training split only, eliminating data leakage.
-- **Empirical Model Selection (Logistic Regression Selected)**:
-  - **Logistic Regression (Selected Operational Model)**: Achieved superior discriminatory power across thresholds (**ROC-AUC: 0.6009**, **F1: 0.4407**, **Recall: 49.37%**).
-  - **HistGradientBoosting (Alternative Candidate)**: Achieved nominally higher raw accuracy (63.20% vs 60.40%) solely by predicting the 68.5% majority On-Time class, but suffered from severe training set overfitting (100% train accuracy) and low disruption recall (**27.85%**, missing 57 out of 79 delays; **ROC-AUC: 0.5262**).
-  - For an aviation early-warning platform, catching disruptions is operationally far more critical than majority-class guessing, so **Logistic Regression is empirically selected as the primary platform model**.
+- **Strict Zero Target Leakage**: `LeakagePolicyEnforcer` (`backend/app/ml/leakage_policy.py`) ensures models use ONLY pre-departure variables (`dep_hour`, `day_of_week`, `month`, `distance_miles`, `scheduled_elapsed_time`, `origin_weather`, `wind_speed_knots`, `taxi_out_minutes` scheduled buffer, `historical_carrier_delay_rate`, etc.). Post-departure variables (`arr_delay_minutes`, `dep_delay_minutes`, `actual_dep_time`, `actual_arr_time`, `air_time_minutes`, `delay_cause`, `carrier_delay`, `weather_delay`, `nas_delay`, `security_delay`, `late_aircraft_delay`) are strictly excluded at both training and prediction time.
+- **Configurable Target Threshold & Task**: Supports `arrival_delay_classification` (`arr_delay_minutes >= 15`, FAA standard) and `departure_delay_classification`, dynamically re-trainable (e.g., 15, 30, or 45 min) via `/api/model/retrain`.
+- **Chronological Train/Test Split**: Chronological 80/20 holdout split sorted by `flight_date` (`1,154` training rows / `289` held-out test rows from the `1,443` completed flights in the `2024-06-01` to `2024-06-30` benchmark fixture; `57` cancelled/diverted rows are tracked in profiling and excluded from delay modeling).
+- **Preprocessing Fitted Only on Training Split**: Preprocessors (`SimpleImputer`, `StandardScaler`, `OneHotEncoder`) are fit strictly inside `Pipeline` on the training split only, preventing data leakage.
+- **Empirical Model Selection (ROC-AUC Criterion)**:
+  - **Candidate HistGradientBoosting (Auto-Selected by ROC-AUC)**: Achieved **ROC-AUC: 0.5182**, **PR-AUC: 0.3261**, **Accuracy: 60.55%**, and **F1: 0.3294** (`32.94%` recall / precision).
+  - **Baseline Logistic Regression (Balanced Class Weights)**: Achieved **ROC-AUC: 0.5090**, **PR-AUC: 0.3193**, **F1: 0.3898**, higher **Recall: 54.12%** (`46 / 85` delayed flights caught), and **Accuracy: 50.17%**.
+  - **Delay Duration Regressor (`RandomForestRegressor`)**: **MAE: 25.26 min**, **RMSE: 39.78 min**, **$R^2$: -0.0182**.
+  - Users can toggle dynamically between `candidate` (*HistGradientBoosting*) and `baseline` (*Logistic Regression*) in the **Predict Delay Engine**.
 
-### Verified Evaluation Scorecard (Held-Out 20% Test Split)
+### Verified Benchmark Evaluation Scorecard (Chronological 20% Holdout Test Split, $N=289$)
 
-| Evaluation Metric | Naive Majority Baseline | Selected Model (Logistic Regression) | Candidate Model (HistGradientBoosting) |
+| Evaluation Metric | Naive Majority Baseline | Baseline (Logistic Regression) | Selected Model (HistGradientBoosting) |
 |---|---|---|---|
-| **Model Type** | Zero-Intelligence Dummy | Linear Classifier (Balanced Weights) | Non-Linear Tree Ensemble |
-| **ROC-AUC** | 0.5000 | **0.6009** (Superior) | 0.5262 |
-| **PR-AUC** | 0.3160 | **0.3745** | 0.3427 |
-| **F1 Score** | 0.0000 | **0.4407** | 0.3235 |
-| **Recall (Delays Caught)** | 0.00% (0 / 79) | **49.37%** (39 / 79 caught) | 27.85% (22 / 79 caught, 57 missed) |
-| **Precision** | 0.00% | **39.80%** | 38.60% |
-| **Accuracy** | **68.48%** (Trivial Majority) | 60.40% | 63.20% (Majority Bias) |
-| **Confusion Matrix** | `[[171, 0], [79, 0]]` | `[[112, 59], [40, 39]]` | `[[136, 35], [57, 22]]` |
+| **Model Type** | Zero-Intelligence Dummy | Linear Classifier (`balanced`) | Non-Linear Tree Ensemble (`balanced`) |
+| **ROC-AUC** | 0.5000 | 0.5090 | **0.5182** |
+| **PR-AUC** | — | 0.3193 | **0.3261** |
+| **F1 Score** | 0.0000 | **0.3898** | 0.3294 |
+| **Recall (Delays Caught)** | 0.00% (0 / 85) | **54.12%** (46 / 85) | 32.94% (28 / 85) |
+| **Precision** | 0.00% | 30.46% | **32.94%** |
+| **Accuracy** | **70.96%** (Dataset Majority) | 50.17% | 60.55% |
+| **Confusion Matrix** | `[[204, 0], [85, 0]]` | `[[99, 105], [39, 46]]` | `[[147, 57], [57, 28]]` |
+
+> **Known Model & Benchmark Limitation**: Because the built-in 1,443-flight fixture is a small synthetic benchmark with weak signal-to-noise separation when evaluated chronologically without post-flight leakage, both classifiers perform near chance (`ROC-AUC ~0.51–0.52`) and the duration regressor yields negative $R^2$ (`-0.0182`). Uploading genuine multi-month U.S. DOT BTS TranStats historical archives via **Data Management** is recommended for substantive predictive signal.
 
 ---
 
@@ -95,12 +98,11 @@ python -m venv .venv
 pip install -r requirements.txt
 
 # Run comparative model training
-$env:PYTHONPATH="backend"
+$env:PYTHONPATH="."
 python app/ml/train_models.py
 
 # Run backend test suite
-python tests/test_data_processing_and_ml.py
-python tests/test_api.py
+python -m unittest discover -s tests -t . -v
 
 # Start Flask backend server (port 8000)
 python run.py
@@ -122,21 +124,25 @@ npm run dev
 
 ---
 
-## 6. Dataset Provenance & Benchmark Transparency
+## 6. Dataset Provenance, Limitations & Benchmark Transparency
 
-- **Built-in Fixture (`sample_flights.csv`)**: The default repository fixture contains 1,250 **calibrated synthetic benchmark records** generated by `app/data/generate_dataset.py` using empirical parameters, genuine IATA airport coordinates, Haversine distances, and hub banking curves calibrated to U.S. DOT BTS TranStats distributions. It is provided for immediate out-of-the-box local execution, offline validation, and automated testing without requiring multi-gigabyte downloads.
-- **Genuine Historical Data Ingestion**: The platform includes a dedicated `FlightDataIngestionPipeline` capable of ingesting official U.S. DOT BTS TranStats monthly/annual flight archives (or the Kaggle 2015 Flight Delays dataset). Real datasets can be uploaded via the **Data Management** interface or placed in `backend/app/data/`.
-- **Scientific Honesty**: Calibrated benchmark data is explicitly labeled as `DEMO BENCHMARK DATASET (CALIBRATED SYNTHETIC)` throughout the UI, and is never misrepresented as raw radar or black-box flight logs. See [docs/DATASET.md](docs/DATASET.md) for full BTS TranStats field mappings and download instructions.
+- **Built-in Fixture (`bts_flight_sample.csv` / active `sample_flights.csv`)**: The default repository benchmark fixture contains **1,500 BTS-schema rows** (**1,443 valid completed flights** plus **57 cancelled/diverted records** tracked separately and excluded from delay training) spanning `2024-06-01` to `2024-06-30` across 26 official BTS columns. It is a **Calibrated Aviation Benchmark Dataset (Synthetic Sample)** (`CALIBRATED_BENCHMARK_SYNTHETIC`) provided for immediate out-of-the-box local execution, offline validation, and automated testing.
+- **Genuine Historical Data Ingestion (CSV & ZIP)**: `FlightDataIngestionPipeline` (`backend/app/data/ingestion.py`) ingests official U.S. DOT BTS Reporting Carrier On-Time Performance `.csv` and `.zip` archives (with Zip Slip protection, temporary archive extraction, and chunked profiling for files >15 MB). Originals uploaded via the UI are preserved in `backend/app/data/uploads/` without silently overwriting source archives.
+- **Scientific Honesty & Known Limitations**:
+  - Benchmark data is explicitly labeled `CALIBRATED BENCHMARK (SYNTHETIC SAMPLE)` in the API, artifacts, and UI, and is never presented as genuine raw airline telemetry or black-box radar logs.
+  - Because `bts_flight_sample.csv` is synthetic, its holdout predictive metrics (`ROC-AUC: 0.5182` HistGradientBoosting / `0.5090` LogisticRegression; regression $R^2$: `-0.0182`) reflect limited pre-departure separability.
+  - Official BTS TranStats exports that omit 3-letter IATA columns (`ORIGIN`, `DEST`) and provide only numeric DOT IDs (`ORIGIN_AIRPORT_ID`, `DEST_AIRPORT_ID`) depend on the built-in Airport ID mapping table; full analytics require selecting `FL_DATE`, `OP_UNIQUE_CARRIER`, `ORIGIN`, `DEST`, `CRS_DEP_TIME`, `ARR_DELAY`, and `DISTANCE`.
+  - See [docs/DATASET.md](docs/DATASET.md) for full BTS TranStats field mappings and download instructions.
 
 ---
 
 ## 7. Supplying Historical Flight Datasets
 
 See [docs/DATASET.md](docs/DATASET.md) for full attribution and download instructions.
-1. Download official U.S. DOT BTS TranStats On-Time Reporting data or the Kaggle 2015 Flight Delays dataset.
-2. Open the **Data Management** tab in the web interface and click **Upload Historical Flight Dataset (CSV)**.
-3. The platform automatically maps headers (`CRS_DEP_TIME`, `ARR_DELAY`, `ORIGIN`, `DEST`, etc.), validates row integrity, detects rejected records, and generates an interactive Data Quality Report.
-4. Click **Ingest & Activate Dataset** to process and retrain the predictive pipelines.
+1. Download official U.S. DOT BTS TranStats Reporting Carrier On-Time Performance data (`.csv` or `.zip`).
+2. Open the **Data Management** tab in the web interface and upload the `.csv` or `.zip` archive.
+3. The platform automatically maps BTS headers (`FL_DATE`, `OP_UNIQUE_CARRIER`, `ORIGIN`, `DEST`, `CRS_DEP_TIME`, `ARR_DELAY`, `CANCELLED`, `DIVERTED`, delay causes, etc.), resolves numeric Airport IDs when supported, profiles missing/duplicate/cancelled/diverted records, and generates a **Data Quality Report**.
+4. Click **Ingest & Activate Dataset** to normalize rows into the active workspace dataset and retrain the predictive models.
 
 ---
 
@@ -146,35 +152,20 @@ See [docs/DATASET.md](docs/DATASET.md) for full attribution and download instruc
 cd backend
 $env:PYTHONPATH="."
 
-# Run entire backend test suite via unittest discovery (19 tests)
-.\.venv\Scripts\python.exe -m unittest discover tests
+# Run entire backend test suite via unittest discovery (30 tests)
+.\.venv\Scripts\python.exe -m unittest discover -s tests -t . -v
 
 # Or run individual test modules:
-.\.venv\Scripts\python.exe tests/test_data_processing_and_ml.py   # 10 tests
-.\.venv\Scripts\python.exe tests/test_api.py                      # 8 tests
-.\.venv\Scripts\python.exe tests/test_e2e_journey.py              # 10-step full workflow
-```
-Actual output:
-```
-...................
-----------------------------------------------------------------------
-Ran 19 tests in 28.693s
-
-OK
+.\.venv\Scripts\python.exe -m unittest tests.test_data_processing_and_ml -v  # 20 tests
+.\.venv\Scripts\python.exe -m unittest tests.test_api -v                      # 9 tests
+.\.venv\Scripts\python.exe -m unittest tests.test_e2e_journey -v              # 1 (10-step E2E workflow)
 ```
 
-Verify frontend compilation with zero TypeScript errors:
+Verify frontend TypeScript compilation (with unused-local checking) and Vite production bundle build:
 ```powershell
 cd frontend
+.\node_modules\.bin\tsc.cmd -p tsconfig.json --noEmit --noUnusedLocals
 npm run build
-```
-Actual output:
-```
-✓ 1589 modules transformed.
-dist/index.html                   1.19 kB │ gzip:  0.71 kB
-dist/assets/index-IcoBIIYv.css   31.65 kB │ gzip:  6.13 kB
-dist/assets/index-BNRSnPdH.js   256.44 kB │ gzip: 68.75 kB
-✓ built in 10.13s
 ```
 
 ---

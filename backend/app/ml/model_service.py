@@ -1,9 +1,7 @@
 import json
-from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 import joblib
 import pandas as pd
-import numpy as np
 
 from app.core.config import settings
 from app.ml.pipeline import engineer_features

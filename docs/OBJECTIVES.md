@@ -29,7 +29,7 @@ The **AI-Powered Aviation Intelligence Platform (AeroIntel)** is engineered to p
 ### Objective 4: Honest & Transparent Machine Learning
 - Maintain strict transparency regarding implementation status.
 - Avoid fabricated mock metrics or hardcoded probabilities.
-- Deploy an operational **Scikit-Learn Random Forest baseline** with validated classification and regression metrics.
+- Deploy comparative **Logistic Regression and HistGradientBoosting** classification pipelines alongside a **Random Forest duration regressor**, backed by validated chronological holdout metrics.
 - Provide a clear roadmap for Phase 2 deep learning (LSTM sequence models) and real-time ADS-B radar feeds.
 
 ### Objective 5: Local Operability & Developer Experience

@@ -145,7 +145,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ data, loading, onS
                 </h3>
                 <p className="text-xs text-slate-400">FAA standard classification</p>
               </div>
-              <span className="text-xs text-slate-500 font-mono">1,250 Flights</span>
+              <span className="text-xs text-slate-500 font-mono">{data.total_flights.toLocaleString()} Flights</span>
             </div>
 
             <div className="space-y-3">

@@ -315,6 +315,7 @@ export interface DataManagementInfo {
   file_size_kb: number;
   total_records: number;
   total_columns: number;
+  is_real_data?: boolean;
   columns: {
     name: string;
     type: string;

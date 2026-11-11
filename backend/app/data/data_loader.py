@@ -1,6 +1,4 @@
-import json
-from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 import pandas as pd
 import numpy as np
 
@@ -308,7 +306,11 @@ class AviationDataManager:
             "ingestion_status": {
                 "source": src_label,
                 "live_stream_connected": False,
-                "live_stream_notes": "U.S. DOT BTS Reporting Carrier On-Time Performance dataset active."
+                "live_stream_notes": (
+                    "U.S. DOT BTS Reporting Carrier On-Time Performance dataset active."
+                    if is_real
+                    else "Calibrated synthetic benchmark fixture active; upload historical BTS archives via Data Management."
+                )
             }
         }
 

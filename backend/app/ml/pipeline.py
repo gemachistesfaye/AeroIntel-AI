@@ -5,7 +5,6 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.pipeline import Pipeline
 
 from app.ml.leakage_policy import (
-    LeakagePolicyEnforcer,
     PredictionTask,
     UNIVERSAL_LEAKAGE_FIELDS,
     PRE_DEPARTURE_NUMERIC_FEATURES,

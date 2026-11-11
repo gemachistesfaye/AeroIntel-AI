@@ -4,14 +4,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
-  AlertCircle,
   X,
   Plane
 } from 'lucide-react';
-import { Flight, FlightQueryParams, RiskTier } from '../../types/aviation';
+import { Flight, FlightQueryParams } from '../../types/aviation';
 import { aviationApi } from '../../services/api';
-import { RiskBadge, Badge } from '../Common/Badge';
-import { DemoDataBanner } from '../Common/DemoDataBanner';
+import { RiskBadge } from '../Common/Badge';
 import { LoadingSpinner } from '../Common/LoadingSpinner';
 
 interface FlightAnalysisViewProps {
@@ -350,7 +348,7 @@ export const FlightAnalysisView: React.FC<FlightAnalysisViewProps> = ({
             </div>
 
             <p className="text-[11px] text-slate-500 italic text-center">
-              Record from 1,250 FAA/BTS flight benchmark fixture
+              Source: {selectedFlight.dataset_label || 'Active Aviation Dataset'}
             </p>
           </div>
         </div>

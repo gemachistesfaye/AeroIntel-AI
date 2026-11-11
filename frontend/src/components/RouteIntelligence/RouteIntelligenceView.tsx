@@ -1,18 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   Compass,
-  ArrowRight,
-  Clock,
-  Layers,
-  MapPin,
   Building,
-  CheckCircle2,
-  AlertTriangle,
   Search
 } from 'lucide-react';
-import { RouteIntelligenceData, RouteCorridor, AirportHub } from '../../types/aviation';
+import { RouteIntelligenceData, RouteCorridor } from '../../types/aviation';
 import { aviationApi } from '../../services/api';
-import { DemoDataBanner } from '../Common/DemoDataBanner';
 import { LoadingSpinner } from '../Common/LoadingSpinner';
 
 // Airport coordinate projection (SVG 680 x 340 space)

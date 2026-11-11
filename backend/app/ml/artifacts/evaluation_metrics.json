@@ -2,7 +2,7 @@
   "model_type": "HistGradientBoosting (Non-Linear Ensemble)",
   "model_version": "1.0.0-selected",
   "task": "arrival_delay_classification",
-  "dataset_type": "U.S. DOT BTS TranStats Historical Records",
+  "dataset_type": "Calibrated Aviation Benchmark Dataset (Synthetic Sample)",
   "delay_threshold_minutes": 15,
   "train_samples": 1154,
   "test_samples": 289,
@@ -246,6 +246,6 @@
     "is_mock": false,
     "selected_model": "HistGradientBoosting (Non-Linear Ensemble)",
     "selection_rationale": "HistGradientBoosting is selected based on superior ROC-AUC (0.5182).",
-    "notes": "Logistic Regression empirically selected based on held-out test ROC-AUC and Recall."
+    "notes": "HistGradientBoosting is selected based on superior ROC-AUC (0.5182)."
   }
 }

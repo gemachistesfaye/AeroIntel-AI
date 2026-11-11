@@ -16,6 +16,12 @@ class EndToEndUserJourneyVerification(unittest.TestCase):
         cls.app = create_app()
         cls.client = cls.app.test_client()
 
+    @classmethod
+    def tearDownClass(cls):
+        e2e_upload = settings.DATA_DIR / "uploads" / "e2e_test_upload.csv"
+        if e2e_upload.exists():
+            e2e_upload.unlink()
+
     def test_complete_user_journey(self):
         print("\n" + "=" * 70)
         print("EXECUTING END-TO-END USER JOURNEY VERIFICATION (10 WORKFLOW STEPS)")
@@ -153,7 +159,7 @@ class EndToEndUserJourneyVerification(unittest.TestCase):
 
         # Step 10: Change delay threshold and confirm displayed metrics update
         print("\n[Step 10] Testing Dynamic Threshold Retraining (30 minutes vs 15 minutes)...")
-        # First regenerate full benchmark dataset to evaluate on 1,250 rows
+        # First reload full benchmark dataset to evaluate on 1,443 completed benchmark rows
         self.client.post("/api/data/regenerate")
         res_retrain30 = self.client.post("/api/model/retrain", json={"delay_threshold_minutes": 30})
         self.assertEqual(res_retrain30.status_code, 200)

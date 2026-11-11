@@ -1,8 +1,8 @@
-import os
 import json
 import time
 import zipfile
 import logging
+import tempfile
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple, Union
 import pandas as pd
@@ -255,9 +255,12 @@ def extract_csv_from_zip(zip_path: Path, output_dir: Optional[Path] = None) -> P
         if not csv_members:
             raise ValueError(f"Zip archive '{zip_path.name}' does not contain any CSV files.")
         
-        # Check path traversal vulnerability
+        # Prevent Zip Slip path traversal
         target_name = csv_members[0]
-        extracted_file = z.extract(target_name, path=str(target_dir))
+        resolved_target_dir = Path(target_dir).resolve()
+        candidate_path = (resolved_target_dir / target_name).resolve()
+        candidate_path.relative_to(resolved_target_dir)
+        extracted_file = z.extract(target_name, path=str(resolved_target_dir))
         logger.info(f"Safely extracted {target_name} from {zip_path.name}")
         return Path(extracted_file)
 
@@ -435,11 +438,14 @@ class FlightDataIngestionPipeline:
             path = Path(file_path_or_df)
             if not path.exists():
                 raise FileNotFoundError(f"File not found: {path}")
-            if path.suffix.lower() == ".zip":
-                path = extract_csv_from_zip(path)
-            
+
             src_name = source_name or path.name
-            
+
+            if path.suffix.lower() == ".zip":
+                with tempfile.TemporaryDirectory() as tmp_dir:
+                    extracted_csv = extract_csv_from_zip(path, output_dir=Path(tmp_dir))
+                    return self.profile_dataset(extracted_csv, source_name=src_name)
+
             first_chunk = pd.read_csv(path, nrows=10, low_memory=False)
             columns_detected = list(first_chunk.columns)
 
@@ -852,12 +858,14 @@ class FlightDataIngestionPipeline:
         if not file_path.exists():
             raise FileNotFoundError(f"Source file does not exist: {file_path}")
 
-        target_csv_path = file_path
         if file_path.suffix.lower() == ".zip":
-            target_csv_path = extract_csv_from_zip(file_path)
-
-        logger.info(f"Ingesting flight data from {target_csv_path}...")
-        raw_df = pd.read_csv(target_csv_path, low_memory=False)
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                target_csv_path = extract_csv_from_zip(file_path, output_dir=Path(tmp_dir))
+                logger.info(f"Ingesting flight data from {target_csv_path} (archive {file_path.name})...")
+                raw_df = pd.read_csv(target_csv_path, low_memory=False)
+        else:
+            logger.info(f"Ingesting flight data from {file_path}...")
+            raw_df = pd.read_csv(file_path, low_memory=False)
         clean_df, report = self.validate_and_clean(raw_df, source_name=file_path.name, custom_mapping=custom_mapping)
 
         # Save to processed destination

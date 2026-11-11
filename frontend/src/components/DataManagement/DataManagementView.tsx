@@ -108,7 +108,7 @@ export const DataManagementView: React.FC = () => {
 
   const { data_health, columns } = data;
   const activeReport = uploadReport || qualityReport;
-  const isSynthetic = data.total_records === 1250 || data.dataset_name.includes("Benchmark") || data.dataset_name.includes("Synthetic");
+  const isSynthetic = !data.is_real_data || data.dataset_name.includes("Benchmark") || data.dataset_name.includes("Synthetic");
 
   return (
     <div className="space-y-6">

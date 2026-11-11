@@ -1,5 +1,5 @@
-import json
 import time
+import tempfile
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 import pandas as pd
@@ -400,12 +400,12 @@ class FlightAnalyticsProcessor:
         # 2. Inspect PySpark Engine
         spark_status = spark_engine.get_cluster_status()
 
-        # Try saving Parquet if engine supports it
+        # Try saving Parquet inside a temporary directory if engine supports it
         parquet_supported = False
-        parquet_path = settings.DATA_DIR / "benchmark_export.parquet"
         try:
             sample_df = pd.read_csv(target_csv, nrows=100)
-            sample_df.to_parquet(parquet_path, index=False)
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                sample_df.to_parquet(Path(tmp_dir) / "benchmark_export.parquet", index=False)
             parquet_supported = True
         except Exception:
             parquet_supported = False

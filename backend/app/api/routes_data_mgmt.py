@@ -1,6 +1,6 @@
-import os
 import json
 import logging
+import tempfile
 from pathlib import Path
 from flask import Blueprint, request, jsonify
 import pandas as pd
@@ -87,22 +87,26 @@ def upload_csv():
             return jsonify({"success": False, "error": "Invalid file format. Only CSV and ZIP files are supported."}), 400
 
         # Preserve the original uploaded file in uploads directory without overwriting active data
-        save_path = UPLOAD_DIR / file.filename
+        save_path = UPLOAD_DIR / Path(file.filename).name
         file.save(str(save_path))
 
-        # If file is a zip archive, extract the main CSV
+        # Extract ZIP into temporary directory when profiling so duplicate CSVs are not left in uploads/
         if fname.endswith(".zip"):
-            csv_path = extract_csv_from_zip(save_path, output_dir=UPLOAD_DIR)
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                csv_path = extract_csv_from_zip(save_path, output_dir=Path(tmp_dir))
+                file_size_bytes = csv_path.stat().st_size
+                if file_size_bytes > 15 * 1024 * 1024:  # > 15MB: use chunked streaming
+                    quality_report = ingestion_pipeline.profile_dataset(csv_path, source_name=file.filename)
+                else:
+                    raw_df = pd.read_csv(csv_path, low_memory=False)
+                    _, quality_report = ingestion_pipeline.validate_and_clean(raw_df, source_name=file.filename)
         else:
-            csv_path = save_path
-
-        # Check file size for chunked streaming profiling
-        file_size_bytes = csv_path.stat().st_size
-        if file_size_bytes > 15 * 1024 * 1024:  # > 15MB: use chunked streaming
-            quality_report = ingestion_pipeline.profile_dataset(csv_path, source_name=file.filename)
-        else:
-            raw_df = pd.read_csv(csv_path, low_memory=False)
-            _, quality_report = ingestion_pipeline.validate_and_clean(raw_df, source_name=file.filename)
+            file_size_bytes = save_path.stat().st_size
+            if file_size_bytes > 15 * 1024 * 1024:  # > 15MB: use chunked streaming
+                quality_report = ingestion_pipeline.profile_dataset(save_path, source_name=file.filename)
+            else:
+                raw_df = pd.read_csv(save_path, low_memory=False)
+                _, quality_report = ingestion_pipeline.validate_and_clean(raw_df, source_name=file.filename)
 
         return jsonify({
             "success": True,
@@ -148,7 +152,7 @@ def ingest_dataset():
 
         return jsonify({
             "success": True,
-            "message": f"Successfully ingested {count} clean records into the platform." + (" Models retrained on real data." if retrained else ""),
+            "message": f"Successfully ingested {count} clean records into the platform." + (" Models retrained." if retrained else ""),
             "records": count,
             "quality_report": report
         })
@@ -157,7 +161,7 @@ def ingest_dataset():
 
 @bp.route("/regenerate", methods=["POST"])
 def reload_benchmark_data():
-    """Re-ingests the verified BTS benchmark dataset without synthesizing fake records."""
+    """Re-ingests the calibrated benchmark dataset fixture without fabricating real BTS attribution."""
     try:
         bts_sample = settings.DATA_DIR / "bts_flight_sample.csv"
         source_target = bts_sample if bts_sample.exists() else settings.DATA_PATH
@@ -180,7 +184,7 @@ def reload_benchmark_data():
 
         return jsonify({
             "success": True,
-            "message": f"Successfully activated {count} authentic BTS benchmark records.",
+            "message": f"Successfully activated {count} calibrated benchmark flight records (BTS schema fixture).",
             "records": count,
             "quality_report": report
         })

@@ -179,6 +179,12 @@ def train_and_compare_models(
             f"Binary classification requires examples from both classes."
         )
 
+    # Enforce centralized target leakage whitelist prior to fitting
+    LeakagePolicyEnforcer.validate_features(
+        PRE_DEPARTURE_NUMERIC_FEATURES + PRE_DEPARTURE_CATEGORICAL_FEATURES,
+        task=task_enum
+    )
+
     # Train/test split strategy: Chronological when flight_date is available and varied, else Stratified
     has_date_series = "flight_date" in df_feat.columns and df_feat["flight_date"].nunique() > 2
     if has_date_series:
@@ -454,7 +460,7 @@ def train_and_compare_models(
             "is_mock": False,
             "selected_model": selected_model_name,
             "selection_rationale": selection_rationale,
-            "notes": "Logistic Regression empirically selected based on held-out test ROC-AUC and Recall."
+            "notes": selection_rationale
         }
     }
     with open(settings.METRICS_PATH, "w") as f:

@@ -7,7 +7,7 @@ When executed in a distributed cluster (e.g. Google Cloud Dataproc, AWS EMR),
 PySpark distributes aggregations and window operations across worker nodes.
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 class PySparkAviationArchitecture:
     """

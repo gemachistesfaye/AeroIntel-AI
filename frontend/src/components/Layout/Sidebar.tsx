@@ -7,8 +7,7 @@ import {
   Database,
   Radio,
   ChevronRight,
-  Calculator,
-  ShieldCheck
+  Calculator
 } from 'lucide-react';
 
 export type NavTab =

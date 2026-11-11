@@ -1,6 +1,8 @@
 import unittest
 import json
 import sys
+import tempfile
+import zipfile
 from pathlib import Path
 import pandas as pd
 import numpy as np
@@ -297,13 +299,28 @@ class DataProcessingAndMLExhaustiveTests(unittest.TestCase):
         self.assertEqual(report["rejection_breakdown"]["cancelled_or_diverted_flight"], 2)
 
     def test_14_large_file_chunked_profiling_and_bts_zip(self):
-        """Verifies streaming chunked profiling on large datasets and tests real BTS zip archive if present."""
-        zip_path = Path(__file__).resolve().parent.parent.parent / "T_ONTIME_REPORTING_20261025_074607.zip"
-        if zip_path.exists():
+        """Verifies streaming chunked profiling across >50,000 rows from a temporary BTS zip archive."""
+        header = "FL_DATE,OP_UNIQUE_CARRIER,ORIGIN_AIRPORT_ID,DEST_AIRPORT_ID,CRS_DEP_TIME,DISTANCE,ARR_DELAY,CANCELLED,DIVERTED\n"
+        sample_rows = [
+            "2024-06-01,DL,10397,13930,0830,606.0,5.0,0,0\n",
+            "2024-06-02,AA,11298,12892,1145,1235.0,22.0,0,0\n",
+            "2024-06-03,UA,13930,12478,1510,740.0,-3.0,0,0\n",
+            "2024-06-04,WN,12892,14771,1820,337.0,0.0,1,0\n",
+            "2024-06-05,B6,12478,10721,2015,187.0,18.0,0,0\n",
+        ]
+        row_count = 55000  # Exceeds 50,000 chunk_size to force multi-chunk streaming
+        csv_payload = header + ("".join(sample_rows) * (row_count // len(sample_rows)))
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            zip_path = Path(tmp_dir) / "bts_chunked_test.zip"
+            with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr("T_ONTIME_REPORTING.csv", csv_payload)
+
             profile = self.pipeline.profile_dataset(zip_path)
-            self.assertEqual(profile["total_input_records"], 544003)
+            self.assertEqual(profile["total_input_records"], row_count)
             self.assertIn("ORIGIN_AIRPORT_ID", profile["columns_detected"])
-            self.assertGreater(profile["unique_origins_count"], 300)
+            self.assertGreaterEqual(profile["unique_origins_count"], 4)
+            self.assertEqual(profile["cancellation_count"], row_count // len(sample_rows))
             self.assertIn("Pandas Streaming Chunk Engine", profile["processing_engine"])
 
     def test_15_temporal_and_delay_causes_analytics(self):

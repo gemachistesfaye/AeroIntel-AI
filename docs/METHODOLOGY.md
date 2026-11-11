@@ -4,11 +4,11 @@
 
 Under **Federal Aviation Administration (FAA)** and **Bureau of Transportation Statistics (BTS)** standards, a commercial flight is categorized as delayed if it arrives at the gate **15 minutes or later** than its scheduled arrival time ($T_{\text{sched}}$).
 
-We define the binary target classification variable explicitly as:
+The pipeline supports both `arrival_delay_classification` (default) and `departure_delay_classification` tasks via `train_and_compare_models()`. For arrival classification, we define the binary target variable explicitly as:
 $$y = \begin{cases} 1 & \text{if } \text{arr\_delay\_minutes} \ge \tau \\ 0 & \text{if } \text{arr\_delay\_minutes} < \tau \end{cases}$$
-where $\tau$ is the configurable delay threshold (default: $\tau = 15$ minutes; reconfigurable to $\tau = 30$ or $\tau = 45$ minutes via `/api/model/retrain`).
+where $\tau$ is the configurable delay threshold (default: $\tau = 15$ minutes; reconfigurable to $\tau = 30$ or $\tau = 45$ minutes via `/api/model/retrain`). Cancelled and diverted flights are tracked during dataset profiling and excluded from delay prediction targets.
 
-For the continuous regression task, the target variable is $\widehat{y}_{\text{reg}} \in \mathbb{R}$, representing the expected late arrival duration in minutes.
+For the continuous regression task (`RandomForestRegressor`), the target variable is $\widehat{y}_{\text{reg}} \in \mathbb{R}$, representing the expected arrival delay duration in minutes.
 
 ---
 
@@ -16,20 +16,21 @@ For the continuous regression task, the target variable is $\widehat{y}_{\text{r
 
 A common defect in flight delay modeling is accidentally including variables that are only known **after** takeoff or touchdown.
 
-To ensure physical and operational validity, our preprocessing pipeline strictly enforces a **Zero Target Leakage Blocklist**:
+To ensure physical and operational validity, `LeakagePolicyEnforcer` (`backend/app/ml/leakage_policy.py`) strictly validates all feature columns against a **Pre-Departure Allowlist** and **Post-Departure Blocklist** at both training and API inference time:
 
 | Variable | Availability | Status in Model | Reason |
 |---|---|---|---|
-| `arr_delay_minutes` | Post-Arrival | ❌ **Excluded** | Ground-truth target variable |
-| `dep_delay_minutes` | Post-Departure | ❌ **Excluded** | Future information when predicting prior to departure |
+| `arr_delay_minutes` / `arr_delay` / `arr_del15` | Post-Arrival | ❌ **Excluded** | Ground-truth target variable |
+| `dep_delay_minutes` / `dep_delay` / `dep_del15` | Post-Departure | ❌ **Excluded** | Unknown prior to departure (blocked from arrival prediction) |
 | `actual_dep_time` / `actual_arr_time` | Post-Flight | ❌ **Excluded** | Unknown prior to flight pushback |
-| `air_time_minutes` | Post-Flight | ❌ **Excluded** | Airborne duration measured after landing |
-| `delay_cause` | Post-Arrival | ❌ **Excluded** | Cause assigned post-mortem by dispatch |
-| `scheduled_dep_time` | Pre-Departure | ✅ **Included** | Available at schedule publication |
-| `origin_weather` / `dest_weather` | Pre-Departure | ✅ **Included** | Aerodrome terminal forecast (METAR/TAF) |
-| `wind_speed_knots` | Pre-Departure | ✅ **Included** | Sustained runway surface crosswinds |
-| `taxi_out_minutes` (scheduled buffer) | Pre-Departure | ✅ **Included** | Airport nominal taxi baseline |
-| `historical_carrier_delay_rate` | Pre-Departure | ✅ **Included** | Carrier historical punctuality track record |
+| `air_time_minutes` / `actual_elapsed_time` / `taxi_in` | Post-Flight | ❌ **Excluded** | Measured only after departure/landing |
+| `delay_cause` / `carrier_delay` / `weather_delay` / `nas_delay` / `security_delay` / `late_aircraft_delay` | Post-Arrival | ❌ **Excluded** | Cause assigned post-mortem by carrier/dispatch |
+| `scheduled_dep_time` (`dep_hour`, `dep_minute`, cyclic `sin`/`cos`) | Pre-Departure | ✅ **Included** | Available at schedule publication |
+| `scheduled_elapsed_time` & `distance_miles` | Pre-Departure | ✅ **Included** | Published schedule duration and corridor distance |
+| `origin_weather` / `dest_weather` | Pre-Departure | ✅ **Included** | Terminal forecast / baseline defaults when absent |
+| `wind_speed_knots` / `visibility_miles` / `precipitation_mm` | Pre-Departure | ✅ **Included** | Surface weather parameters |
+| `taxi_out_minutes` (scheduled buffer) | Pre-Departure | ✅ **Included** | Airport nominal taxi baseline (imputed to median if unavailable in raw BTS) |
+| `historical_carrier_delay_rate` | Pre-Departure | ✅ **Included** | Carrier baseline punctuality rate |
 
 ---
 
@@ -54,8 +55,13 @@ We formulate delay prediction as a comparative machine learning benchmark betwee
 
 ## 4. Evaluation Strategy & Trade-Off Analysis
 
-- **Train/Test Split**: 80% Training ($N=1,000$), 20% Holdout Test ($N=250$) stratified on the binary target.
-- **Naive Majority Class Dummy**: In an aviation dataset where 68.5% of flights are on-time, a zero-intelligence dummy model predicting "Always On-Time" achieves **68.5% raw accuracy**, yet fails completely with **0% recall** on delayed flights.
+- **Chronological Train/Test Split**: Records are sorted chronologically by `flight_date` and split 80% Training / 20% Holdout Test (`N=1,154` train / `N=289` test on the `1,443` completed flights in the default benchmark fixture). Preprocessors (`SimpleImputer`, `StandardScaler`, `OneHotEncoder`) are fit exclusively on the training partition inside scikit-learn `Pipeline` objects.
+- **Naive Majority Class Dummy**: In the built-in benchmark fixture (`71.0%` On-Time vs `29.0%` Delayed at $\tau=15$ min), a zero-intelligence majority baseline achieves **70.96% accuracy** with **0.00% recall** and **0.5000 ROC-AUC**.
+- **Verified Benchmark Results (`threshold = 15 min`, Test $N=289$)**:
+  - **HistGradientBoosting (Auto-Selected by ROC-AUC)**: Accuracy `60.55%`, Precision `32.94%`, Recall `32.94%`, F1 `0.3294`, ROC-AUC `0.5182`, PR-AUC `0.3261`, Confusion Matrix `[[147, 57], [57, 28]]`.
+  - **Logistic Regression (`class_weight='balanced'`)**: Accuracy `50.17%`, Precision `30.46%`, Recall `54.12%`, F1 `0.3898`, ROC-AUC `0.5090`, PR-AUC `0.3193`, Confusion Matrix `[[99, 105], [39, 46]]`.
+  - **RandomForestRegressor**: `MAE = 25.26 min`, `RMSE = 39.78 min`, `$R^2 = -0.0182$`.
+  - *Honesty Note*: On the small synthetic benchmark fixture evaluated chronologically without leakage, pre-departure features exhibit near-random discrimination; genuine multi-month BTS TranStats datasets should be uploaded via Data Management for stronger operational modeling.
 - **Evaluation Telemetry**:
   - **Accuracy**: Overall fraction of correct classifications.
   - **Precision**: $\frac{TP}{TP + FP}$ — proportion of delay alarms that were real disruptions. Low precision leads to airline dispatcher "alarm fatigue" and costly unnecessary gate reassignments.

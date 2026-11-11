@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
 import {
-  Plane,
   AlertTriangle,
   Calculator,
-  Zap,
-  Clock,
-  Wind
+  Zap
 } from 'lucide-react';
 import { PredictionRequest, PredictionResponse } from '../../types/aviation';
 import { aviationApi } from '../../services/api';
